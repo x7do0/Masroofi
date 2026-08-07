@@ -24,8 +24,9 @@
 - [x] Update transaction.
 - [x] Delete transaction.
 - [x] UI state يتحدث فور CRUD.
-- [x] CRUD flow مجرب داخل Chromium عبر QA harness.
-- [ ] Persistence بعد Reload مجرب على Origin حقيقي.
+- [x] CRUD flow مجرب داخل Chromium.
+- [x] Persistence بعد Reload مجرب على GitHub Pages الحقيقي.
+- [x] Persistence بعد إغلاق وفتح الصفحة مجرب على Origin حقيقي.
 
 ## Financial Logic
 - [x] إجمالي الدخل مشتق من السجل.
@@ -37,7 +38,7 @@
 
 ## Home
 - [x] الرصيد الحالي.
-- [x] إضافة رصيد = الانتقال لإضافة دخل.
+- [x] إضافة رصيد = إضافة دخل بنفس القواعد.
 - [x] لا يوجد زر إضافة عملية زائد.
 - [x] آخر العمليات.
 - [x] Empty state.
@@ -67,15 +68,16 @@
 - [x] Import validation.
 - [x] Validation للحقول والتواريخ والمبالغ والـ IDs المكررة.
 - [x] Confirmation قبل استبدال السجل الحالي.
-- [x] Export/Restore flow مجرب end-to-end عبر QA harness.
+- [x] Export/Restore flow مجرب end-to-end.
 
 ## CI / Build Evidence
-- [x] GitHub Actions CI يعمل على `feat/**` و`fix/**` و`main`.
+- [x] GitHub Actions CI يعمل على الفروع و`main`.
 - [x] Install ناجح.
 - [x] Typecheck ناجح.
 - [x] Lint ناجح.
 - [x] Production build ناجح.
 - [x] Production artifact يتم حفظه مؤقتاً للفحص.
+- [x] Production smoke workflow باستخدام Playwright + Chromium.
 
 ## UX / Browser QA
 - [x] Mobile 390×844 بدون horizontal overflow.
@@ -85,7 +87,13 @@
 - [x] Calendar dialog له accessible label.
 - [x] Reduced-motion support موجود.
 
-## Remaining Production Work
-- [ ] IndexedDB persistence بعد Reload/إغلاق وفتح الصفحة على Origin حقيقي.
-- [ ] GitHub Pages deploy من `main` بعد اعتماد النسخة.
-- [ ] Smoke test على رابط GitHub Pages المنشور.
+## Production
+- [x] Repository Public للاستضافة عبر GitHub Pages.
+- [x] GitHub Pages مصدره GitHub Actions.
+- [x] Deploy من `main` ناجح.
+- [x] HTTPS enforced.
+- [x] الموقع الحي: `https://x7do0.github.io/Masroofi/`.
+- [x] Smoke test على الرابط المنشور.
+- [x] IndexedDB persistence بعد Reload/close/open على Origin حقيقي.
+
+**Production checklist: COMPLETE.**

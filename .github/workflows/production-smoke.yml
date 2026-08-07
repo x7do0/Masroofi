@@ -1,0 +1,39 @@
+name: Production Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'test/production-smoke'
+  workflow_run:
+    workflows: ['Deploy Masroofi to GitHub Pages']
+    types: [completed]
+
+jobs:
+  smoke:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install browser test dependency
+        run: npm install --no-save playwright
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run production smoke
+        env:
+          MASROOFI_URL: https://x7do0.github.io/Masroofi/
+        run: node scripts/production-smoke.mjs
+      - name: Upload smoke screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke-screenshot
+          path: production-smoke.png
+          if-no-files-found: ignore
+          retention-days: 3

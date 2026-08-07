@@ -15,8 +15,9 @@
 - [x] Unified Transaction model.
 - [x] IndexedDB service.
 - [x] CRUD operations.
-- [x] CRUD synchronization مجرب في Chromium عبر QA harness.
-- [ ] Persistence بعد Reload مجرب على Origin حقيقي.
+- [x] CRUD synchronization مجرب في Chromium.
+- [x] Persistence بعد Reload مجرب على Origin حقيقي.
+- [x] Persistence بعد إغلاق وفتح الصفحة مجرب على Origin حقيقي.
 
 ## 3. Core Finance Logic
 - [x] Balance derived from transactions.
@@ -58,7 +59,7 @@
 - [x] Export versioned JSON.
 - [x] Validate import + transaction fields/dates/duplicate IDs.
 - [x] Safe replace confirmation.
-- [x] Export/Restore browser flow verified عبر QA harness.
+- [x] Export/Restore browser flow verified.
 
 ## 10. UX & Reliability Polish
 - [x] Responsive foundation.
@@ -75,20 +76,26 @@
 - [x] Typecheck.
 - [x] Lint.
 - [x] Production build.
-- [x] CRUD smoke test عبر browser harness.
-- [x] Backup/Restore smoke test عبر browser harness.
+- [x] CRUD smoke test.
+- [x] Backup/Restore smoke test.
 - [x] Mobile/desktop visual test.
-- [ ] Real-origin IndexedDB persistence test after Reload/close/open.
+- [x] Real-origin IndexedDB persistence test after Reload/close/open.
 
 ## 12. GitHub Pages Production
 - [x] Vite base prepared for `/Masroofi/`.
 - [x] Deployment workflow prepared.
-- [ ] Production deploy from `main` after approval.
-- [ ] Published smoke test including real IndexedDB persistence.
+- [x] GitHub Pages enabled with GitHub Actions source.
+- [x] Production deployed from `main`.
+- [x] Published smoke test against the real URL.
+- [x] Real IndexedDB persistence verified on GitHub Pages.
 
-## Current gate
+## Production URL
 
-المشروع حالياً Release Candidate على `feat/core-app`. لا ندمج إلى `main` ولا نعلن Production قبل نشره على GitHub Pages وفحص persistence على Origin فعلي.
+`https://x7do0.github.io/Masroofi/`
+
+## Current state
+
+**Production-ready.** جميع بوابات الإصدار الأساسية المتفق عليها نجحت وتم توثيقها في `QA.md` و`CHECKLIST.md`.
 
 ## Completion rule
-No phase is considered production-ready until its real browser/build checks pass. Keep `PROJECT.md`, `DESIGN.md`, `DATA.md`, `DECISIONS.md`, `CHECKLIST.md`, `QA.md`, and this plan aligned with actual behavior.
+أي تغيير مستقبلي مؤثر يجب أن يمر مجدداً بـ CI وProduction smoke المناسب، وتبقى `PROJECT.md`, `DESIGN.md`, `DATA.md`, `DECISIONS.md`, `CHECKLIST.md`, `QA.md`, وهذا الملف متطابقة مع السلوك الفعلي.
