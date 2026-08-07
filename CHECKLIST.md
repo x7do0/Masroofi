@@ -10,10 +10,10 @@
 - [x] RTL و`lang="ar"`.
 - [x] ESLint config.
 - [x] GitHub Pages base path.
-- [ ] npm install مجرب في بيئة المشروع.
-- [ ] TypeScript check مجرب.
-- [ ] ESLint مجرب.
-- [ ] Production build مجرب.
+- [x] npm install مجرب في GitHub Actions.
+- [x] TypeScript check مجرب وناجح.
+- [x] ESLint مجرب وناجح.
+- [x] Production build مجرب وناجح.
 
 ## Data Layer
 - [x] Transaction model موحد.
@@ -23,7 +23,7 @@
 - [x] Update transaction.
 - [x] Delete transaction.
 - [x] UI state يتحدث فور CRUD.
-- [ ] Persistence smoke test فعلي.
+- [ ] Persistence smoke test فعلي داخل المتصفح.
 
 ## Financial Logic
 - [x] إجمالي الدخل مشتق من السجل.
@@ -56,11 +56,24 @@
 - [x] ترتيب زمني.
 - [x] تعديل وحذف من السجل.
 
+## Backup / Restore
+- [x] Export JSON versioned.
+- [x] Import validation أساسي.
+- [x] Confirmation قبل استبدال السجل الحالي.
+- [ ] Hardening إضافي للتحقق من كل الحقول والتواريخ.
+- [ ] Smoke test فعلي للتصدير والاسترجاع.
+
+## CI / Build Evidence
+- [x] GitHub Actions CI يعمل على `feat/**` و`fix/**` و`main`.
+- [x] Install ناجح.
+- [x] Typecheck ناجح.
+- [x] Lint ناجح.
+- [x] Production build ناجح.
+
 ## Remaining Production Work
-- [ ] Backup JSON.
-- [ ] Restore JSON + validation.
 - [ ] Browser QA mobile/desktop.
-- [ ] Build/Lint/Typecheck فعلي.
+- [ ] CRUD + IndexedDB persistence smoke test.
+- [ ] Backup/Restore smoke test.
 - [ ] Accessibility pass.
-- [ ] GitHub Pages workflow/deploy.
+- [ ] GitHub Pages deploy من `main` بعد اعتماد النسخة.
 - [ ] Smoke test للنسخة المنشورة.
