@@ -3,13 +3,20 @@ import { useRef, useState } from 'react';
 import type { Transaction } from '../types/transaction';
 import { createBackup, validateBackup } from '../utils/backup';
 
+interface MergeResult {
+  added: number;
+  updated: number;
+  total: number;
+}
+
 interface DataToolsProps {
   transactions: Transaction[];
   onRestore: (transactions: Transaction[]) => Promise<void>;
+  onMerge: (transactions: Transaction[]) => Promise<MergeResult>;
   disabled?: boolean;
 }
 
-export function DataTools({ transactions, onRestore, disabled = false }: DataToolsProps) {
+export function DataTools({ transactions, onRestore, onMerge, disabled = false }: DataToolsProps) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pendingRestore, setPendingRestore] = useState<Transaction[] | null>(null);
@@ -34,19 +41,30 @@ export function DataTools({ transactions, onRestore, disabled = false }: DataToo
       const text = await file.text();
       const payload = validateBackup(JSON.parse(text) as unknown);
       setPendingRestore(payload.transactions);
-      setMessage(`النسخة جاهزة وتحتوي ${payload.transactions.length} عملية. راجع التأكيد أدناه.`);
+      setMessage(`النسخة جاهزة وتحتوي ${payload.transactions.length} عملية. اختر الدمج أو الاستبدال.`);
     } catch (cause) {
       setPendingRestore(null);
       setMessage(cause instanceof Error ? cause.message : 'تعذر قراءة النسخة الاحتياطية.');
     }
   };
 
-  const restore = async () => {
+  const mergeBackup = async () => {
+    if (!pendingRestore) return;
+    try {
+      const result = await onMerge(pendingRestore);
+      setPendingRestore(null);
+      setMessage(`تم دمج النسخة بنجاح. أضفنا ${result.added} عملية وحدّثنا ${result.updated}.`);
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'تعذر دمج النسخة الاحتياطية.');
+    }
+  };
+
+  const replaceBackup = async () => {
     if (!pendingRestore) return;
     try {
       await onRestore(pendingRestore);
       setPendingRestore(null);
-      setMessage('تم استرجاع النسخة الاحتياطية بنجاح.');
+      setMessage('تم استبدال السجل بالنسخة الاحتياطية بنجاح.');
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : 'تعذر استرجاع النسخة الاحتياطية.');
     }
@@ -100,12 +118,13 @@ export function DataTools({ transactions, onRestore, disabled = false }: DataToo
 
             {message && <div className="data-message" role="status">{message}</div>}
             {pendingRestore && (
-              <div className="restore-warning">
-                <strong>استبدال البيانات الحالية؟</strong>
-                <p>النسخة المختارة راح تحل محل السجل الموجود حالياً.</p>
-                <div>
+              <div className="restore-warning restore-choice">
+                <strong>شلون تريد ترجع النسخة؟</strong>
+                <p><b>الدمج</b> يحافظ على عملياتك الحالية ويضيف الناقص من النسخة. <b>الاستبدال</b> يمسح السجل الحالي ويحط النسخة مكانه.</p>
+                <div className="restore-choice-actions">
+                  <button type="button" className="button secondary" onClick={() => void mergeBackup()}>دمج مع البيانات الحالية</button>
+                  <button type="button" className="button danger" onClick={() => void replaceBackup()}>استبدال السجل بالكامل</button>
                   <button type="button" className="button ghost" onClick={() => setPendingRestore(null)}>إلغاء</button>
-                  <button type="button" className="button danger" onClick={() => void restore()}>استرجاع النسخة</button>
                 </div>
               </div>
             )}
