@@ -8,7 +8,7 @@ interface ModernDatePickerProps {
   label?: string;
 }
 
-const weekdayLabels = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -78,9 +78,9 @@ export function ModernDatePicker({ value, onChange, label = 'التاريخ وا
       <label>{label}</label>
       <button type="button" className="date-trigger" onClick={() => setOpen(true)}>
         <span className="field-icon"><CalendarDays size={18} /></span>
-        <span className="date-trigger-copy">
-          <strong dir="ltr">{formatDate(value || nowLocalInputValue())}</strong>
-          <small dir="ltr">{formatTime(value || nowLocalInputValue())}</small>
+        <span className="date-trigger-copy date-ltr" dir="ltr">
+          <strong>{formatDate(value || nowLocalInputValue())}</strong>
+          <small>{formatTime(value || nowLocalInputValue())}</small>
         </span>
         <span className="date-edit-hint">تعديل</span>
       </button>
@@ -94,21 +94,21 @@ export function ModernDatePicker({ value, onChange, label = 'التاريخ وا
             <div className="date-dialog-head">
               <div>
                 <span>اختيار التاريخ</span>
-                <strong dir="ltr">{formatDate(toLocalDateTimeValue(draft))}</strong>
+                <strong className="date-ltr" dir="ltr">{formatDate(toLocalDateTimeValue(draft))}</strong>
               </div>
               <button type="button" className="icon-button" aria-label="إغلاق" onClick={() => setOpen(false)}><X size={19} /></button>
             </div>
 
             <div className="calendar-toolbar">
               <button type="button" className="icon-button" aria-label="الشهر التالي" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}><ChevronRight size={19} /></button>
-              <strong dir="ltr">{formatMonthYear(visibleMonth)}</strong>
+              <strong className="date-ltr" dir="ltr">{formatMonthYear(visibleMonth)}</strong>
               <button type="button" className="icon-button" aria-label="الشهر السابق" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}><ChevronLeft size={19} /></button>
             </div>
 
-            <div className="calendar-grid weekday-grid">
+            <div className="calendar-grid weekday-grid" dir="ltr">
               {weekdayLabels.map((day) => <span key={day}>{day}</span>)}
             </div>
-            <div className="calendar-grid day-grid">
+            <div className="calendar-grid day-grid" dir="ltr">
               {days.map((day) => {
                 const outside = day.getMonth() !== visibleMonth.getMonth();
                 const active = sameDay(day, draft);
