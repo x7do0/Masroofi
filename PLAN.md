@@ -1,194 +1,83 @@
 # Masroofi — Implementation Plan
 
-هذه الخطة تقود المشروع من المستودع الفارغ إلى نسخة Production مستقرة على GitHub Pages.
+## 0. Foundation
+- [x] Repository + memory docs.
 
-> القاعدة: لا نضيف Features خارج `PROJECT.md` لمجرد أنها تبدو مفيدة. البساطة أولوية.
+## 1. Technical Setup
+- [x] React + TypeScript + Vite structure.
+- [x] RTL + Arabic document metadata.
+- [x] ESLint/TypeScript configuration.
+- [x] GitHub Pages base path.
+- [ ] Install/build/lint/typecheck verification.
 
-## المرحلة 0 — Project Foundation
+## 2. Data Model & Local Storage
+- [x] Unified Transaction model.
+- [x] IndexedDB service.
+- [x] CRUD operations.
+- [ ] Persistence browser smoke test.
 
-- [x] إنشاء المستودع.
-- [x] تثبيت `PROJECT.md` كمصدر حقيقة.
-- [x] إنشاء ملفات الذاكرة والتخطيط.
-- [x] مراجعة المتطلبات والتأكد من عدم وجود تعارضات.
+## 3. Core Finance Logic
+- [x] Balance derived from transactions.
+- [x] Income/expense totals.
+- [x] Chronological ordering.
+- [x] IQD formatting.
 
-**مخرج المرحلة:** وثائق واضحة تكفي لأي Agent أو مطور لفهم المشروع بدون الرجوع للمحادثات القديمة.
+## 4. App Shell & Navigation
+- [x] RTL shell.
+- [x] Bottom navigation.
+- [x] Home / Expenses / Income / History views.
 
----
+## 5. Home
+- [x] Current balance.
+- [x] Add balance -> Income.
+- [x] Summary cards.
+- [x] Recent transactions.
+- [x] Empty state.
 
-## المرحلة 1 — Technical Setup
+## 6. Income
+- [x] Add/edit/delete.
+- [x] Optional note and Emoji.
+- [x] Automatic current date/time.
+- [x] Modern custom calendar editing.
 
-- [ ] إنشاء React + TypeScript + Vite.
-- [ ] تهيئة RTL و`lang="ar"`.
-- [ ] تنظيم CSS والهيكل الأساسي بدون تعقيد.
-- [ ] إضافة ESLint وإعدادات TypeScript الضرورية.
-- [ ] إعداد Scripts للتطوير والبناء والفحص.
-- [ ] التأكد أن Development وBuild يعملان بنجاح.
+## 7. Expenses
+- [x] Add/edit/delete.
+- [x] Optional note and Emoji.
+- [x] Automatic current date/time.
+- [x] Modern custom calendar editing.
 
-**مخرج المرحلة:** تطبيق فارغ ونظيف يعمل محلياً.
+## 8. Unified History
+- [x] Unified chronological history.
+- [x] Filters.
+- [x] Edit/delete.
 
----
+## 9. Backup & Restore
+- [ ] Export versioned JSON.
+- [ ] Validate import.
+- [ ] Safe replace confirmation.
 
-## المرحلة 2 — Data Model & Local Storage
+## 10. UX & Reliability Polish
+- [x] Responsive foundation.
+- [x] Custom delete confirmations.
+- [x] Reduced-motion support.
+- [ ] Browser visual QA.
+- [ ] Accessibility audit.
+- [ ] Edge-case pass.
 
-- [ ] تعريف نموذج Transaction واحد للدخل والمصروف.
-- [ ] إنشاء طبقة IndexedDB بسيطة ومعزولة عن الواجهة.
-- [ ] دعم إنشاء/قراءة/تعديل/حذف العمليات.
-- [ ] ضمان حفظ البيانات بعد إغلاق وفتح الموقع.
-- [ ] اعتماد سجل العمليات كمصدر الحقيقة الوحيد.
+## 11. Verification
+- [ ] npm install.
+- [ ] Typecheck.
+- [ ] Lint.
+- [ ] Production build.
+- [ ] CRUD smoke test.
+- [ ] IndexedDB persistence test.
+- [ ] Mobile/desktop visual test.
 
-**مخرج المرحلة:** تخزين محلي موثوق قبل بناء الواجهات النهائية.
+## 12. GitHub Pages Production
+- [x] Vite base prepared for `/Masroofi/`.
+- [ ] Deployment workflow.
+- [ ] Production deploy.
+- [ ] Published smoke test.
 
----
-
-## المرحلة 3 — Core Finance Logic
-
-- [ ] حساب الرصيد من العمليات فقط.
-- [ ] حساب إجمالي الدخل عند الحاجة.
-- [ ] حساب إجمالي المصروفات عند الحاجة.
-- [ ] ترتيب السجل زمنياً.
-- [ ] ضمان انعكاس CRUD فوراً على كل View.
-- [ ] تنسيق مبالغ IQD بشكل موحد.
-
-**مخرج المرحلة:** المنطق المالي يعمل باستقلال عن شكل الواجهة.
-
----
-
-## المرحلة 4 — App Shell & Navigation
-
-- [ ] بناء Layout عربي RTL.
-- [ ] بناء Bottom Navigation.
-- [ ] إضافة الصفحات الأربع:
-  - [ ] الرئيسية.
-  - [ ] المصروفات.
-  - [ ] الدخل.
-  - [ ] السجل.
-- [ ] جعل التنقل مناسباً للموبايل والكمبيوتر.
-
-**مخرج المرحلة:** هيكل التطبيق قابل للتنقل بدون Features ناقصة تسبب تشتيتاً.
-
----
-
-## المرحلة 5 — Home
-
-- [ ] بطاقة الرصيد الحالي.
-- [ ] زر `إضافة رصيد`.
-- [ ] زر إضافة الرصيد يفتح نفس Flow إضافة دخل.
-- [ ] آخر العمليات.
-- [ ] حالات Empty State عند عدم وجود بيانات.
-
-**مخرج المرحلة:** المستخدم يعرف وضعه المالي الحالي فور فتح التطبيق.
-
----
-
-## المرحلة 6 — Income
-
-- [ ] نموذج إضافة دخل.
-- [ ] الاسم مطلوب.
-- [ ] المبلغ مطلوب وبالدينار العراقي.
-- [ ] التاريخ والوقت تلقائيان مع إمكانية التعديل.
-- [ ] ملاحظة اختيارية.
-- [ ] أيقونة/إيموجي اختيارية.
-- [ ] سجل الدخل.
-- [ ] تعديل دخل.
-- [ ] حذف دخل مع تأكيد واضح.
-
-**مخرج المرحلة:** CRUD كامل للدخل.
-
----
-
-## المرحلة 7 — Expenses
-
-- [ ] نموذج إضافة مصروف.
-- [ ] الاسم مطلوب.
-- [ ] المبلغ مطلوب وبالدينار العراقي.
-- [ ] التاريخ والوقت تلقائيان مع إمكانية التعديل.
-- [ ] ملاحظة اختيارية.
-- [ ] أيقونة/إيموجي اختيارية.
-- [ ] سجل المصروفات.
-- [ ] تعديل مصروف.
-- [ ] حذف مصروف مع تأكيد واضح.
-
-**مخرج المرحلة:** CRUD كامل للمصروفات.
-
----
-
-## المرحلة 8 — Unified History
-
-- [ ] دمج الدخل والمصروفات في سجل واحد.
-- [ ] ترتيب زمني صحيح.
-- [ ] تمييز واضح بين دخل ومصروف بدون الاعتماد على اللون فقط.
-- [ ] التعديل والحذف ينعكسان فوراً على السجل.
-
-**مخرج المرحلة:** سجل واحد موثوق لكل العمليات.
-
----
-
-## المرحلة 9 — Backup & Restore
-
-- [ ] تصدير جميع البيانات إلى JSON صالح.
-- [ ] تضمين نسخة Schema/Backup version.
-- [ ] استيراد ملف Backup.
-- [ ] التحقق من صحة البيانات قبل الاسترجاع.
-- [ ] عدم مسح البيانات الحالية بصمت.
-- [ ] رسائل نجاح/فشل واضحة.
-
-**مخرج المرحلة:** المستخدم يستطيع حماية سجله من فقدان بيانات المتصفح.
-
----
-
-## المرحلة 10 — UX & Reliability Polish
-
-- [ ] حالات Loading إن احتجناها.
-- [ ] Empty States واضحة.
-- [ ] رسائل Validation بسيطة.
-- [ ] Confirmation للحذف والاسترجاع المدمر.
-- [ ] Keyboard usability الأساسية.
-- [ ] تباين وأحجام نصوص جيدة.
-- [ ] Responsive على الهاتف والكمبيوتر.
-- [ ] التأكد من عدم وجود Overflow أو مشاكل RTL.
-
-**مخرج المرحلة:** تجربة استخدام مستقرة ومريحة.
-
----
-
-## المرحلة 11 — Verification
-
-- [ ] Build ناجح.
-- [ ] TypeScript بدون أخطاء.
-- [ ] ESLint بدون أخطاء حرجة.
-- [ ] اختبار إضافة دخل وتغير الرصيد.
-- [ ] اختبار إضافة مصروف وتغير الرصيد.
-- [ ] اختبار تعديل عملية وتحديث الرصيد.
-- [ ] اختبار حذف عملية وتحديث الرصيد.
-- [ ] اختبار إعادة تحميل الصفحة وبقاء البيانات.
-- [ ] اختبار Backup ثم Restore.
-- [ ] اختبار السجل بعد بيانات قديمة وحديثة.
-- [ ] اختبار Mobile viewport.
-- [ ] اختبار Desktop viewport.
-
-**مخرج المرحلة:** Release Candidate قابل للنشر.
-
----
-
-## المرحلة 12 — GitHub Pages Production
-
-- [ ] تهيئة Vite لمسار Repository الصحيح.
-- [ ] إعداد Deployment مناسب لـ GitHub Pages.
-- [ ] بناء Production.
-- [ ] نشر النسخة.
-- [ ] فحص الرابط المنشور فعلياً.
-- [ ] اختبار Refresh والتنقل على GitHub Pages.
-- [ ] تنفيذ Smoke Test للوظائف الأساسية في النسخة المنشورة.
-
-**مخرج المرحلة:** Masroofi يعمل كنسخة Production شخصية.
-
----
-
-## قاعدة إنهاء كل مرحلة
-
-لا تعتبر المرحلة مكتملة لمجرد وجود الكود. يجب أن:
-
-1. تعمل الوظيفة فعلياً.
-2. لا تكسر ما قبلها.
-3. يتم تحديث `CHECKLIST.md`.
-4. يتم تحديث الوثائق إذا تغير قرار أو سلوك.
+## Completion rule
+No phase is considered production-ready until its real browser/build checks pass. Keep `PROJECT.md`, `DESIGN.md`, `DATA.md`, `DECISIONS.md`, and this plan aligned with actual behavior.

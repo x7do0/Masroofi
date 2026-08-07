@@ -1,90 +1,24 @@
-# Masroofi — Agent Working Rules
+# Masroofi — Agent Instructions
 
-هذا الملف مخصص لأي Agent يعمل على المشروع لاحقاً. الهدف أن يبدأ من نفس الذاكرة ولا يعيد اختراع المتطلبات.
-
-## اقرأ بهذا الترتيب قبل أي تعديل
-
+Before changing code, read these files in order:
 1. `PROJECT.md`
-2. `DECISIONS.md`
-3. `PLAN.md`
-4. `DESIGN.md`
-5. `DATA.md`
+2. `PLAN.md`
+3. `DESIGN.md`
+4. `DATA.md`
+5. `DECISIONS.md`
 6. `CHECKLIST.md`
 
-إذا تعارض الكود مع هذه الوثائق، لا تفترض أن الكود هو الصحيح. افحص آخر قرار موثق ثم أصلح التعارض أو حدّث الوثائق فقط إذا تم اتخاذ قرار جديد فعلاً.
-
-## قواعد Scope
-
-- التطبيق شخصي وبسيط.
-- لا Backend.
-- لا Authentication.
-- لا Cloud Database.
-- لا Multi-currency.
-- لا ربط مصرفي.
-- لا Features إضافية لمجرد تحسين الشكل.
-- لا Categories إجبارية أو Budgets أو Charts معقدة إلا بطلب لاحق واضح.
-
-## قواعد البيانات المالية
-
-- سجل العمليات هو مصدر الحقيقة الوحيد.
-- لا تخزن Current Balance كرقم مستقل.
-- الرصيد يحسب من الدخل والمصروفات.
-- المبلغ داخل Transaction موجب؛ `type` يحدد دخلاً أو مصروفاً.
-- العملة IQD فقط.
-- أي Create/Update/Delete يجب أن ينعكس فوراً على كل View.
-
-## قواعد الإدخال
-
-لكل دخل أو مصروف:
-
-- الاسم مطلوب.
-- المبلغ مطلوب.
-- التاريخ والوقت افتراضياً الآن وقابلان للتعديل.
-- الملاحظة اختيارية.
-- الأيقونة/الإيموجي اختيارية.
-- لا تعيين Emoji تلقائياً.
-
-`إضافة رصيد` في الرئيسية هي نفس `إضافة دخل`.
-
-## قواعد Git
-
-- لا تعمل مباشرة على `main` أثناء التطوير العادي.
-- استخدم Branch واضح لكل مرحلة/تغيير.
-- لا تدخل تغييرات غير مرتبطة بنفس العمل في Commit واحد إن أمكن.
-- لا تحذف أو تعيد كتابة تاريخ Git بدون ضرورة وتصريح واضح.
-- لا تنشئ PR أو Merge أو Release إلا عندما تكون الخطوة مطلوبة بوضوح.
-
-## قواعد التنفيذ
-
-- فضّل أبسط حل صحيح.
-- لا تضف Dependency إذا كان الحل الأصلي بسيطاً ومعقولاً.
-- افصل طبقة التخزين عن UI بشكل واضح لكن بدون Architecture مبالغ بها.
-- استخدم TypeScript بشكل فعلي لحماية نموذج البيانات.
-- اجعل RTL جزءاً أساسياً من التصميم، لا Patch في النهاية.
-- Mobile-first ثم تأكد من Desktop.
-
-## قواعد التحقق
-
-قبل اعتبار أي مرحلة مكتملة:
-
-- شغّل Build.
-- شغّل TypeScript/Lint المتوفرين.
-- اختبر Flow الذي تغير فعلياً.
-- تأكد أن CRUD لا يكسر الرصيد أو السجلات.
-- حدّث `CHECKLIST.md` بما تم التحقق منه فعلاً فقط.
-
-لا تضع `[x]` على عنصر لم يتم اختباره.
-
-## تحديث الذاكرة
-
-إذا اتخذ المستخدم قراراً جديداً يغير المشروع:
-
-1. حدّث `DECISIONS.md`.
-2. حدّث `PROJECT.md` إذا تغير Source of Truth.
-3. حدّث `DESIGN.md` أو `DATA.md` عند الحاجة.
-4. عدّل `PLAN.md` و`CHECKLIST.md` إذا تغير مسار التنفيذ.
-5. بعد ذلك اجعل الكود متوافقاً مع القرار.
-
-## الهدف النهائي
-
-نسخة Production بسيطة ومستقرة على GitHub Pages، تحفظ السجل محلياً في IndexedDB، تدعم CRUD الكامل، تحسب الرصيد دائماً من البيانات، وتوفر Backup/Restore قبل اعتبار المشروع جاهزاً.
+Rules:
+- Do not work directly on `main`.
+- Keep the app personal, simple, and local-first.
+- No backend/auth/cloud database unless the user changes scope explicitly.
+- Balance is derived from transactions; never store it separately.
+- Income and expenses use one unified Transaction model.
+- IQD only.
+- Notes and Emoji are optional.
+- Never auto-select Emoji from a title.
+- New transactions default to current local date/time.
+- Date editing must use the modern custom calendar experience defined in `DESIGN.md`.
+- Any CRUD change must remain synchronized across balance, type lists, and unified history.
+- Update docs/checklist when behavior or decisions change.
+- Do not mark verification items complete without actually running/verifying them.

@@ -1,154 +1,66 @@
 # Masroofi — Production Checklist
 
-هذه القائمة هي بوابة الوصول إلى Production. لا نعلن المشروع جاهزاً قبل اكتمال العناصر الأساسية فعلياً.
-
 ## Foundation
-
-- [x] GitHub Repository موجود.
-- [x] `main` موجود.
-- [x] `PROJECT.md` موجود كمصدر حقيقة.
-- [x] فرع `docs/project-foundation` موجود.
-- [x] خطة تنفيذ موثقة.
-- [x] عقد UI/UX موثق.
-- [x] عقد البيانات والتخزين موثق.
-- [x] سجل القرارات موثق.
-- [x] Production Checklist موجودة.
-- [x] تعليمات Agents موجودة.
+- [x] Repository موجود.
+- [x] Project memory موثقة.
+- [x] Design/Data/Decisions/Plan موجودة.
 
 ## Project Setup
-
-- [ ] React + TypeScript + Vite.
-- [ ] RTL على مستوى التطبيق.
-- [ ] `lang="ar"`.
-- [ ] ESLint يعمل.
-- [ ] TypeScript check ينجح.
-- [ ] Production build ينجح.
-- [ ] هيكل المشروع بسيط وواضح.
+- [x] React + TypeScript + Vite files جاهزة.
+- [x] RTL و`lang="ar"`.
+- [x] ESLint config.
+- [x] GitHub Pages base path.
+- [ ] npm install مجرب في بيئة المشروع.
+- [ ] TypeScript check مجرب.
+- [ ] ESLint مجرب.
+- [ ] Production build مجرب.
 
 ## Data Layer
-
-- [ ] Transaction model موحد.
-- [ ] IndexedDB initialized.
-- [ ] Create transaction يعمل.
-- [ ] Read transactions يعمل.
-- [ ] Update transaction يعمل.
-- [ ] Delete transaction يعمل.
-- [ ] البيانات تبقى بعد Refresh.
-- [ ] البيانات تبقى بعد إغلاق وفتح الموقع.
-- [ ] التعامل مع أخطاء IndexedDB واضح.
+- [x] Transaction model موحد.
+- [x] IndexedDB service.
+- [x] Create transaction.
+- [x] Read transactions.
+- [x] Update transaction.
+- [x] Delete transaction.
+- [x] UI state يتحدث فور CRUD.
+- [ ] Persistence smoke test فعلي.
 
 ## Financial Logic
-
-- [ ] إجمالي الدخل صحيح.
-- [ ] إجمالي المصروفات صحيح.
-- [ ] الرصيد = الدخل - المصروفات.
-- [ ] لا يوجد Current Balance مخزن بشكل منفصل.
-- [ ] تعديل دخل يحدث الرصيد فوراً.
-- [ ] تعديل مصروف يحدث الرصيد فوراً.
-- [ ] حذف دخل يحدث الرصيد فوراً.
-- [ ] حذف مصروف يحدث الرصيد فوراً.
-- [ ] المبالغ كلها IQD.
-- [ ] تنسيق الأرقام ثابت وواضح.
+- [x] إجمالي الدخل مشتق من السجل.
+- [x] إجمالي المصروفات مشتق من السجل.
+- [x] الرصيد = الدخل - المصروفات.
+- [x] لا يوجد balance مخزن منفصل.
+- [x] IQD فقط.
 
 ## Home
+- [x] الرصيد الحالي.
+- [x] إضافة رصيد = الانتقال لإضافة دخل.
+- [x] لا يوجد زر إضافة عملية زائد.
+- [x] آخر العمليات.
+- [x] Empty state.
 
-- [ ] الرصيد الحالي ظاهر بوضوح.
-- [ ] `إضافة رصيد` يعمل كإضافة دخل.
-- [ ] لا يوجد زر `إضافة عملية` زائد.
-- [ ] آخر العمليات تظهر بشكل صحيح.
-- [ ] Empty state مناسب.
-
-## Income
-
-- [ ] إضافة دخل.
-- [ ] الاسم مطلوب.
-- [ ] المبلغ مطلوب.
-- [ ] التاريخ الحالي افتراضي.
-- [ ] التاريخ قابل للتعديل.
-- [ ] الملاحظة اختيارية.
-- [ ] الأيقونة/الإيموجي اختيارية.
-- [ ] لا يوجد Emoji تلقائي.
-- [ ] سجل الدخل صحيح.
-- [ ] تعديل الدخل.
-- [ ] حذف الدخل مع Confirmation.
-
-## Expenses
-
-- [ ] إضافة مصروف.
-- [ ] الاسم مطلوب.
-- [ ] المبلغ مطلوب.
-- [ ] التاريخ الحالي افتراضي.
-- [ ] التاريخ قابل للتعديل.
-- [ ] الملاحظة اختيارية.
-- [ ] الأيقونة/الإيموجي اختيارية.
-- [ ] لا يوجد Emoji تلقائي.
-- [ ] سجل المصروفات صحيح.
-- [ ] تعديل المصروف.
-- [ ] حذف المصروف مع Confirmation.
+## Income / Expenses
+- [x] إضافة.
+- [x] الاسم والمبلغ مطلوبان.
+- [x] التاريخ والوقت الحاليان افتراضياً.
+- [x] Calendar حديث لتعديل التاريخ.
+- [x] الملاحظة اختيارية.
+- [x] Emoji اختياري وبدون اختيار تلقائي.
+- [x] سجل لكل نوع.
+- [x] تعديل.
+- [x] حذف مع Confirmation مخصص.
 
 ## Unified History
+- [x] سجل موحد.
+- [x] فلترة الكل/الدخل/المصروفات.
+- [x] ترتيب زمني.
+- [x] تعديل وحذف من السجل.
 
-- [ ] الدخل والمصروفات في سجل واحد.
-- [ ] الترتيب الزمني صحيح.
-- [ ] دخل/مصروف مميزان بوضوح.
-- [ ] السجل يحدث فور CRUD.
-- [ ] العمليات القديمة ذات تاريخ معدل تظهر في مكانها الصحيح.
-
-## Backup / Restore
-
-- [ ] Export JSON يعمل.
-- [ ] النسخة تحتوي format/version.
-- [ ] جميع العمليات موجودة في Backup.
-- [ ] Restore يقبل Backup صالح.
-- [ ] Restore يرفض ملفاً غير صالح.
-- [ ] Confirmation قبل Replace.
-- [ ] فشل Restore لا يمسح البيانات الحالية.
-- [ ] بعد Restore الرصيد والسجلات صحيحة.
-
-## UX / Responsive
-
-- [ ] العربية سليمة.
-- [ ] RTL سليم في كل الصفحات.
-- [ ] الهاتف مريح للاستخدام.
-- [ ] الكمبيوتر مريح للاستخدام.
-- [ ] لا Horizontal overflow.
-- [ ] الأزرار سهلة للمس.
-- [ ] حالات الخطأ واضحة ومختصرة.
-- [ ] Empty states واضحة.
-- [ ] الحذف لا يحدث بضغطة عرضية.
-- [ ] اللون ليس الوسيلة الوحيدة لتمييز دخل/مصروف.
-
-## Verification
-
-- [ ] Build ينجح من بيئة نظيفة.
-- [ ] TypeScript بدون Errors.
-- [ ] ESLint بدون Errors حرجة.
-- [ ] Manual smoke test للدخل.
-- [ ] Manual smoke test للمصروفات.
-- [ ] Manual smoke test للتعديل.
-- [ ] Manual smoke test للحذف.
-- [ ] Manual smoke test للحفظ بعد Reload.
-- [ ] Manual smoke test للBackup/Restore.
-- [ ] اختبار Mobile viewport.
-- [ ] اختبار Desktop viewport.
-
-## GitHub Pages
-
-- [ ] Vite base path مضبوط.
-- [ ] Deployment workflow/طريقة النشر مضبوطة.
-- [ ] GitHub Pages يعمل.
-- [ ] الصفحة تفتح بدون 404.
-- [ ] Refresh يعمل بالشكل المتوقع.
-- [ ] Assets تحمل بدون أخطاء.
-- [ ] التطبيق المنشور يجتاز Smoke Test.
-
-## Production Gate
-
-لا نعتبر Masroofi Production إلا إذا:
-
-- [ ] كل وظائف Scope الأساسي مكتملة.
-- [ ] لا يوجد Bug معروف يسبب فقدان بيانات.
-- [ ] الحسابات متزامنة وصحيحة.
-- [ ] Backup/Restore مجرب.
-- [ ] النسخة المنشورة مجربة فعلياً.
-- [ ] الوثائق تعكس السلوك الحقيقي للتطبيق.
+## Remaining Production Work
+- [ ] Backup JSON.
+- [ ] Restore JSON + validation.
+- [ ] Browser QA mobile/desktop.
+- [ ] Build/Lint/Typecheck فعلي.
+- [ ] Accessibility pass.
+- [ ] GitHub Pages workflow/deploy.
+- [ ] Smoke test للنسخة المنشورة.
