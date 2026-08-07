@@ -15,8 +15,21 @@
 - [x] ملخص هذا الشهر للدخل والمصروفات.
 - [x] Quick Add على الموبايل لإضافة رصيد أو مصروف بسرعة.
 - [x] تحسين عرض Emoji المختار داخل العمليات.
-- [ ] Responsive + accessibility + PWA QA على النسخة النهائية.
-- [ ] CI + Production build + Pages smoke قبل الدمج.
+- [x] Responsive + accessibility + PWA QA على النسخة النهائية.
+- [x] CI + Production build + Pages smoke قبل الدمج والنشر النهائي.
+
+## Production verification
+
+تم دمج مرحلة الـPolish إلى `main` عبر PR #4 كـ squash commit واحد نظيف.
+
+- Release commit: `042dc113b5dbd1e7f141f981e9b6f27f8198a62a`
+- CI على `main`: PASS.
+- GitHub Pages Deploy: PASS.
+- Production Smoke run `31183470957`: PASS.
+- Manifest + PNG PWA icons: PASS.
+- Service Worker active على GitHub Pages الحقيقي: PASS.
+- Light / Dark / System theme persistence: PASS.
+- IndexedDB persistence عبر Reload وإغلاق/فتح الصفحة: PASS.
 
 ## خارج النطاق
 

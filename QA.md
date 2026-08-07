@@ -96,7 +96,7 @@
 
 `https://x7do0.github.io/Masroofi/`
 
-Deployment:
+Deployment الأساسي:
 - GitHub Pages workflow run: `31175205356`
 - Run attempt الناجح: `3`
 - Build job: PASS.
@@ -109,7 +109,7 @@ Deployment:
 تم إنشاء Production smoke test باستخدام Playwright + Chromium ضد رابط GitHub Pages الحقيقي، وليس QA harness محلياً.
 
 - Workflow: `Production Smoke`
-- Run: `31176627936`
+- Run الأساسي: `31176627936`
 - Production URL load: PASS.
 - إضافة دخل تجريبي إلى IndexedDB الحقيقي: PASS.
 - قراءة العملية مباشرة من IndexedDB: PASS.
@@ -119,8 +119,33 @@ Deployment:
 - Screenshot artifact: تم رفعه بنجاح.
 - بيانات الاختبار يتم حذفها في نهاية الـ run، ومتصفح CI منفصل تماماً عن بيانات المستخدم.
 
-سجل الاختبار أكد صراحة:
+## Polish Release — Production QA
+
+تم دمج PR #4 إلى `main` كـ squash commit:
+
+`042dc113b5dbd1e7f141f981e9b6f27f8198a62a`
+
+التحقق على نفس النسخة:
+- Main CI run `31183412160`: PASS.
+- Typecheck: PASS.
+- Lint: PASS.
+- Production build: PASS.
+- GitHub Pages deploy run `31183412075`: PASS.
+- Extended Production Smoke run `31183470957`: PASS.
+- Live URL load: PASS.
+- PWA manifest: PASS.
+- PNG install icons `192x192` و`512x512`: PASS.
+- Service Worker أصبح Active على الـorigin الحقيقي: PASS.
+- Light / Dark / System theme preference تم حفظها: PASS.
+- Real IndexedDB write: PASS.
+- IndexedDB persistence after Reload: PASS.
+- IndexedDB persistence after page close/reopen: PASS.
+- Runtime/page errors: لا يوجد.
+- Screenshot artifact: تم رفعه بنجاح.
+
+سجل الاختبار النهائي أكد صراحة:
 - `PASS: production URL loaded: https://x7do0.github.io/Masroofi/`
+- `PASS: PWA manifest, PNG icons, Service Worker and persisted theme verified`
 - `PASS: real IndexedDB persisted transaction across reload and page reopen`
 
 ## Production Gate
@@ -132,6 +157,9 @@ Deployment:
 - [x] Basic accessibility QA.
 - [x] GitHub Pages deployment.
 - [x] Real-origin IndexedDB persistence after reload and page reopen.
+- [x] PWA manifest + production PNG icons.
+- [x] Service Worker on real production origin.
+- [x] Theme persistence.
 - [x] Published production smoke test.
 
-**النتيجة: Production gate مكتمل.**
+**النتيجة: Production + Polish gate مكتمل.**
