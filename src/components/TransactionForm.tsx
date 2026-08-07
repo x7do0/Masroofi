@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Banknote, FileText, PencilLine, Plus, ReceiptText, Save } from 'lucide-react';
 import type { Transaction, TransactionInput, TransactionType } from '../types/transaction';
+import { formatGroupedInteger, parseGroupedInteger } from '../utils/currency';
 import { nowLocalInputValue } from '../utils/date';
 import { EmojiPicker } from './EmojiPicker';
 import { ModernDatePicker } from './ModernDatePicker';
@@ -91,13 +92,13 @@ export function TransactionForm({ type, editing, onSubmit, onCancelEdit }: Trans
             <span className="field-icon"><Banknote size={18} /></span>
             <input
               id={`${type}-amount`}
-              type="number"
+              type="text"
               inputMode="numeric"
-              min="1"
-              step="1000"
-              value={form.amount || ''}
-              onChange={(event) => setForm((current) => ({ ...current, amount: Number(event.target.value) }))}
-              placeholder="مثال: 250000"
+              pattern="[0-9,]*"
+              value={formatGroupedInteger(form.amount)}
+              onChange={(event) => setForm((current) => ({ ...current, amount: parseGroupedInteger(event.target.value) }))}
+              placeholder="مثال: 250,000"
+              autoComplete="off"
             />
             <span className="currency-suffix">د.ع</span>
           </div>

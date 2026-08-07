@@ -26,7 +26,10 @@ export function TransactionRow({ transaction, onEdit, onDelete, compact = false 
   }, [menuOpen]);
 
   return (
-    <article className={`transaction-row${compact ? ' compact' : ''}`}>
+    <article
+      className={`transaction-row${compact ? ' compact' : ''}${menuOpen ? ' menu-open' : ''}`}
+      style={menuOpen ? { zIndex: 30 } : undefined}
+    >
       <div className={`transaction-avatar ${isIncome ? 'income' : 'expense'}${transaction.emoji ? ' has-emoji' : ''}`}>
         {transaction.emoji ?? (isIncome ? <TrendingUp size={19} /> : <TrendingDown size={19} />)}
       </div>

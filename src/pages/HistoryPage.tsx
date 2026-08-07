@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ListFilter, WalletCards, X } from 'lucide-react';
 import type { Transaction, TransactionInput, TransactionType } from '../types/transaction';
 import { formatIQD } from '../utils/currency';
+import { formatHistoryDate } from '../utils/date';
 import { TransactionRow } from '../components/TransactionRow';
 import { TransactionForm } from '../components/TransactionForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -30,7 +31,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
   const grouped = useMemo(() => {
     const groups = new Map<string, Transaction[]>();
     for (const item of visible) {
-      const key = new Intl.DateTimeFormat('ar-IQ', { dateStyle: 'full' }).format(new Date(item.occurredAt));
+      const key = formatHistoryDate(item.occurredAt);
       const current = groups.get(key) ?? [];
       current.push(item);
       groups.set(key, current);
