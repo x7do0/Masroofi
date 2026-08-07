@@ -4,6 +4,7 @@
 - [x] Repository موجود.
 - [x] Project memory موثقة.
 - [x] Design/Data/Decisions/Plan موجودة.
+- [x] QA evidence موثق في `QA.md`.
 
 ## Project Setup
 - [x] React + TypeScript + Vite files جاهزة.
@@ -23,7 +24,8 @@
 - [x] Update transaction.
 - [x] Delete transaction.
 - [x] UI state يتحدث فور CRUD.
-- [ ] Persistence smoke test فعلي داخل المتصفح.
+- [x] CRUD flow مجرب داخل Chromium عبر QA harness.
+- [ ] Persistence بعد Reload مجرب على Origin حقيقي.
 
 ## Financial Logic
 - [x] إجمالي الدخل مشتق من السجل.
@@ -31,6 +33,7 @@
 - [x] الرصيد = الدخل - المصروفات.
 - [x] لا يوجد balance مخزن منفصل.
 - [x] IQD فقط.
+- [x] المبالغ تعرض بأرقام اعتيادية مثل `430,000 د.ع`.
 
 ## Home
 - [x] الرصيد الحالي.
@@ -44,6 +47,8 @@
 - [x] الاسم والمبلغ مطلوبان.
 - [x] التاريخ والوقت الحاليان افتراضياً.
 - [x] Calendar حديث لتعديل التاريخ.
+- [x] Calendar Mobile Bottom Sheet مجرب بصرياً.
+- [x] Calendar Desktop Dialog مجرب بصرياً.
 - [x] الملاحظة اختيارية.
 - [x] Emoji اختياري وبدون اختيار تلقائي.
 - [x] سجل لكل نوع.
@@ -55,13 +60,14 @@
 - [x] فلترة الكل/الدخل/المصروفات.
 - [x] ترتيب زمني.
 - [x] تعديل وحذف من السجل.
+- [x] تزامن الرصيد والسجل بعد Add/Edit/Delete مجرب.
 
 ## Backup / Restore
 - [x] Export JSON versioned.
-- [x] Import validation أساسي.
+- [x] Import validation.
+- [x] Validation للحقول والتواريخ والمبالغ والـ IDs المكررة.
 - [x] Confirmation قبل استبدال السجل الحالي.
-- [ ] Hardening إضافي للتحقق من كل الحقول والتواريخ.
-- [ ] Smoke test فعلي للتصدير والاسترجاع.
+- [x] Export/Restore flow مجرب end-to-end عبر QA harness.
 
 ## CI / Build Evidence
 - [x] GitHub Actions CI يعمل على `feat/**` و`fix/**` و`main`.
@@ -69,11 +75,17 @@
 - [x] Typecheck ناجح.
 - [x] Lint ناجح.
 - [x] Production build ناجح.
+- [x] Production artifact يتم حفظه مؤقتاً للفحص.
+
+## UX / Browser QA
+- [x] Mobile 390×844 بدون horizontal overflow.
+- [x] Desktop 1280×900 بدون horizontal overflow.
+- [x] Basic accessibility check: لا Buttons بدون accessible name في Flow المفحوص.
+- [x] Form labels موجودة.
+- [x] Calendar dialog له accessible label.
+- [x] Reduced-motion support موجود.
 
 ## Remaining Production Work
-- [ ] Browser QA mobile/desktop.
-- [ ] CRUD + IndexedDB persistence smoke test.
-- [ ] Backup/Restore smoke test.
-- [ ] Accessibility pass.
+- [ ] IndexedDB persistence بعد Reload/إغلاق وفتح الصفحة على Origin حقيقي.
 - [ ] GitHub Pages deploy من `main` بعد اعتماد النسخة.
-- [ ] Smoke test للنسخة المنشورة.
+- [ ] Smoke test على رابط GitHub Pages المنشور.
