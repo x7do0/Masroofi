@@ -13,7 +13,7 @@
 - [x] عقد البيانات والتخزين موثق.
 - [x] سجل القرارات موثق.
 - [x] Production Checklist موجودة.
-- [ ] تعليمات Agents موجودة.
+- [x] تعليمات Agents موجودة.
 
 ## Project Setup
 
