@@ -5,6 +5,8 @@ import { formatIQD } from '../utils/currency';
 import { TransactionRow } from '../components/TransactionRow';
 import { TransactionForm } from '../components/TransactionForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EmptyState } from '../components/EmptyState';
+import { emptyStates } from '../content/emptyStates';
 
 type HistoryFilter = 'all' | TransactionType;
 
@@ -76,11 +78,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
           </div>
         )) : (
           <div className="transactions-panel">
-            <div className="empty-state">
-              <span className="empty-icon"><WalletCards size={24} /></span>
-              <h3>السجل فارغ</h3>
-              <p>العمليات راح تظهر هنا مرتبة حسب التاريخ.</p>
-            </div>
+            <EmptyState content={emptyStates.history} />
           </div>
         )}
       </section>
