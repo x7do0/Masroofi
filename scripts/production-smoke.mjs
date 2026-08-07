@@ -2,7 +2,11 @@ import { chromium } from 'playwright';
 
 const baseUrl = process.env.MASROOFI_URL ?? 'https://x7do0.github.io/Masroofi/';
 const testTitle = `اختبار إنتاج ${Date.now()}`;
+const expenseTitle = `مصروف اختبار ${Date.now()}`;
 const amount = 123456;
+const expenseAmount = 25000;
+const arabicDigitPattern = /[٠-٩۰-۹]/;
+const englishMonthPattern = /January|February|March|April|May|June|July|August|September|October|November|December/;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -65,6 +69,26 @@ async function verifyPwa(page) {
   assert(pwa.serviceWorkerActive, 'Service Worker did not become active');
 }
 
+async function verifyTransactionMenuLayer(page) {
+  const firstRow = page.locator('.transaction-row').first();
+  await firstRow.getByRole('button', { name: 'خيارات العملية' }).click();
+  const popover = firstRow.locator('.row-menu-popover');
+  await popover.waitFor();
+
+  const layerCheck = await popover.evaluate((menu) => {
+    const row = menu.closest('.transaction-row');
+    const rect = menu.getBoundingClientRect();
+    const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.bottom - 8);
+    return {
+      rowZIndex: row ? Number.parseInt(getComputedStyle(row).zIndex || '0', 10) : 0,
+      menuOwnsTopElement: Boolean(topElement && menu.contains(topElement)),
+    };
+  });
+
+  assert(layerCheck.rowZIndex >= 30, 'Open transaction row was not raised above sibling stacking contexts');
+  assert(layerCheck.menuOwnsTopElement, 'Transaction menu is visually covered by another row');
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   locale: 'ar-IQ',
@@ -97,10 +121,30 @@ try {
   await page.getByRole('button', { name: 'الدخل', exact: true }).click();
   await page.locator('#income-title').fill(testTitle);
   await page.locator('#income-amount').fill(String(amount));
+  assert(await page.locator('#income-amount').inputValue() === '123,456', 'Amount input did not add thousands separators while typing');
+
+  const dateTriggerText = await page.locator('.date-trigger').innerText();
+  assert(!arabicDigitPattern.test(dateTriggerText), 'Date trigger still contains Arabic-Indic digits');
+  assert(englishMonthPattern.test(dateTriggerText), 'Date trigger does not use an English month name');
+
   await page.locator('#income-note').fill('Smoke test على GitHub Pages الحقيقي');
   await page.getByRole('button', { name: 'إضافة رصيد', exact: true }).click();
   await page.getByText('💰 تمت إضافة الرصيد', { exact: true }).waitFor({ timeout: 10_000 });
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
+
+  await page.getByRole('button', { name: 'المصروفات', exact: true }).click();
+  await page.locator('#expense-title').fill(expenseTitle);
+  await page.locator('#expense-amount').fill(String(expenseAmount));
+  assert(await page.locator('#expense-amount').inputValue() === '25,000', 'Expense amount input did not add thousands separators');
+  await page.getByRole('button', { name: 'إضافة مصروف', exact: true }).click();
+  await page.getByText(expenseTitle, { exact: true }).waitFor({ timeout: 10_000 });
+
+  await page.getByRole('button', { name: 'السجل', exact: true }).click();
+  await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
+  const historyText = await page.locator('.history-page').innerText();
+  assert(!arabicDigitPattern.test(historyText), 'History still contains Arabic-Indic digits');
+  assert(englishMonthPattern.test(historyText), 'History does not use English month names');
+  await verifyTransactionMenuLayer(page);
 
   const beforeReload = await readTransactions(page);
   const savedBeforeReload = beforeReload.find((item) => item.title === testTitle && item.amount === amount && item.type === 'income');
@@ -108,6 +152,7 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'الدخل', exact: true }).click();
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
   await page.getByText('123,456 د.ع', { exact: false }).first().waitFor({ timeout: 10_000 });
 
@@ -133,6 +178,9 @@ try {
   assert(runtimeErrors.length === 0, `Runtime errors detected:\n${runtimeErrors.join('\n')}`);
   console.log(`PASS: production URL loaded: ${baseUrl}`);
   console.log('PASS: PWA manifest, PNG icons, Service Worker and persisted theme verified');
+  console.log('PASS: amount inputs format thousands separators while typing');
+  console.log('PASS: visible dates use Latin digits and English month names');
+  console.log('PASS: transaction action menu stays above sibling rows');
   console.log(`PASS: real IndexedDB persisted transaction across reload and page reopen: ${testTitle}`);
 } finally {
   try {
