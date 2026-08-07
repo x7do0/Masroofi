@@ -5,6 +5,8 @@ import { formatIQD } from '../utils/currency';
 import { TransactionForm } from '../components/TransactionForm';
 import { TransactionRow } from '../components/TransactionRow';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EmptyState } from '../components/EmptyState';
+import { emptyStates } from '../content/emptyStates';
 
 interface LedgerPageProps {
   type: TransactionType;
@@ -74,11 +76,7 @@ export function LedgerPage({ type, transactions, onAdd, onUpdate, onDelete }: Le
               onDelete={setPendingDelete}
             />
           )) : (
-            <div className="empty-state compact-empty">
-              <span className={`empty-icon ${isIncome ? 'income' : 'expense'}`}>{isIncome ? <Banknote size={23} /> : <ReceiptText size={23} />}</span>
-              <h3>{isIncome ? 'سجل الدخل فارغ' : 'سجل المصروفات فارغ'}</h3>
-              <p>أول عملية تضيفها راح تبقى محفوظة هنا.</p>
-            </div>
+            <EmptyState content={isIncome ? emptyStates.income : emptyStates.expenses} compact />
           )}
         </div>
       </section>
