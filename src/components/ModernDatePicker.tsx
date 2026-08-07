@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, X } from 'lucide-react';
-import { formatDate, nowLocalInputValue, toLocalDateTimeValue } from '../utils/date';
+import { formatDate, formatMonthYear, formatTime, nowLocalInputValue, toLocalDateTimeValue } from '../utils/date';
 
 interface ModernDatePickerProps {
   value: string;
@@ -9,10 +9,6 @@ interface ModernDatePickerProps {
 }
 
 const weekdayLabels = ['أحد', 'اثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
-
-function monthTitle(date: Date) {
-  return new Intl.DateTimeFormat('ar-IQ', { month: 'long', year: 'numeric' }).format(date);
-}
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -83,8 +79,8 @@ export function ModernDatePicker({ value, onChange, label = 'التاريخ وا
       <button type="button" className="date-trigger" onClick={() => setOpen(true)}>
         <span className="field-icon"><CalendarDays size={18} /></span>
         <span className="date-trigger-copy">
-          <strong>{formatDate(value || nowLocalInputValue())}</strong>
-          <small>{new Intl.DateTimeFormat('ar-IQ', { hour: 'numeric', minute: '2-digit' }).format(selected)}</small>
+          <strong dir="ltr">{formatDate(value || nowLocalInputValue())}</strong>
+          <small dir="ltr">{formatTime(value || nowLocalInputValue())}</small>
         </span>
         <span className="date-edit-hint">تعديل</span>
       </button>
@@ -98,14 +94,14 @@ export function ModernDatePicker({ value, onChange, label = 'التاريخ وا
             <div className="date-dialog-head">
               <div>
                 <span>اختيار التاريخ</span>
-                <strong>{formatDate(toLocalDateTimeValue(draft))}</strong>
+                <strong dir="ltr">{formatDate(toLocalDateTimeValue(draft))}</strong>
               </div>
               <button type="button" className="icon-button" aria-label="إغلاق" onClick={() => setOpen(false)}><X size={19} /></button>
             </div>
 
             <div className="calendar-toolbar">
               <button type="button" className="icon-button" aria-label="الشهر التالي" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}><ChevronRight size={19} /></button>
-              <strong>{monthTitle(visibleMonth)}</strong>
+              <strong dir="ltr">{formatMonthYear(visibleMonth)}</strong>
               <button type="button" className="icon-button" aria-label="الشهر السابق" onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}><ChevronLeft size={19} /></button>
             </div>
 
@@ -138,6 +134,8 @@ export function ModernDatePicker({ value, onChange, label = 'التاريخ وا
               </div>
               <input
                 type="time"
+                lang="en-US"
+                dir="ltr"
                 aria-label="الوقت"
                 value={`${String(draft.getHours()).padStart(2, '0')}:${String(draft.getMinutes()).padStart(2, '0')}`}
                 onChange={(event) => changeTime(event.target.value)}
