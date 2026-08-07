@@ -1,0 +1,20 @@
+{
+  "name": "مصروفي",
+  "short_name": "مصروفي",
+  "description": "مدير دخل ومصروفات شخصي بالدينار العراقي",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f8f6",
+  "theme_color": "#0f8a5f",
+  "icons": [
+    {
+      "src": "./app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
