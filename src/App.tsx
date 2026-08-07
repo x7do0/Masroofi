@@ -22,7 +22,7 @@ export default function App() {
   const [page, setPage] = useState<AppPage>('home');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastId = useRef(0);
-  const { transactions, totals, loading, error, add, update, remove, restore } = useTransactions();
+  const { transactions, totals, loading, error, add, update, remove, restore, merge } = useTransactions();
   const meta = pageMeta[page];
 
   const notify = useCallback((kind: ToastKind, message: string) => {
@@ -74,6 +74,17 @@ export default function App() {
     }
   }, [notify, restore]);
 
+  const mergeWithFeedback = useCallback(async (items: Transaction[]) => {
+    try {
+      const result = await merge(items);
+      notify('success', `✅ تم دمج النسخة وإضافة ${result.added} عملية`);
+      return result;
+    } catch (cause) {
+      notify('error', 'تعذر دمج النسخة الاحتياطية');
+      throw cause;
+    }
+  }, [merge, notify]);
+
   const navigate = useCallback((next: AppPage) => {
     setPage(next);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -113,7 +124,12 @@ export default function App() {
         </div>
         <div className="header-actions polish-actions">
           <ThemeToggle />
-          <DataTools transactions={transactions} onRestore={restoreWithFeedback} disabled={loading} />
+          <DataTools
+            transactions={transactions}
+            onRestore={restoreWithFeedback}
+            onMerge={mergeWithFeedback}
+            disabled={loading}
+          />
         </div>
       </header>
 
