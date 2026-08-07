@@ -16,6 +16,8 @@ interface HomePageProps {
   onNavigate: (page: AppPage) => void;
 }
 
+type BalanceStatus = 'empty' | 'healthy' | 'low' | 'negative';
+
 export function HomePage({ transactions, balance, income, expenses, onNavigate }: HomePageProps) {
   const recent = transactions.slice(0, 4);
   const now = new Date();
@@ -25,15 +27,28 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
   });
   const monthIncome = monthTransactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
   const monthExpenses = monthTransactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-  const balanceStatus = balance < 0 ? 'negative' : balance <= LOW_BALANCE_THRESHOLD_IQD ? 'low' : 'healthy';
+  const balanceStatus: BalanceStatus = transactions.length === 0
+    ? 'empty'
+    : balance < 0
+      ? 'negative'
+      : balance <= LOW_BALANCE_THRESHOLD_IQD
+        ? 'low'
+        : 'healthy';
+  const balanceMessage = balanceStatus === 'empty'
+    ? 'أضف أول رصيد حتى تبدأ المتابعة.'
+    : balanceStatus === 'negative'
+      ? 'رصيدك حالياً بالسالب.'
+      : balanceStatus === 'low'
+        ? 'رصيدك قريب من الحد المنخفض المحدد.'
+        : 'محسوب تلقائياً من كل الدخل والمصروفات.';
 
   return (
     <div className="page-stack home-page">
       <section className={`balance-card balance-${balanceStatus}`}>
         <div className="balance-content">
           <div className="balance-label"><WalletCards size={18} /> الرصيد الحالي</div>
-          <AnimatedMoney value={balance} className={balance < 0 ? 'negative-balance' : balanceStatus === 'low' ? 'low-balance' : ''} />
-          <p>{balanceStatus === 'negative' ? 'رصيدك حالياً بالسالب.' : balanceStatus === 'low' ? 'رصيدك قريب من الحد المنخفض المحدد.' : 'محسوب تلقائياً من كل الدخل والمصروفات.'}</p>
+          <AnimatedMoney value={balance} className={balanceStatus === 'negative' ? 'negative-balance' : balanceStatus === 'low' ? 'low-balance' : ''} />
+          <p>{balanceMessage}</p>
           <button type="button" className="button primary balance-action" onClick={() => onNavigate('income')}>
             <Plus size={18} /> إضافة رصيد
           </button>
