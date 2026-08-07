@@ -40,6 +40,31 @@ async function readTransactions(page) {
   }));
 }
 
+async function verifyPwa(page) {
+  const pwa = await page.evaluate(async () => {
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (!(manifestLink instanceof HTMLLinkElement)) return { error: 'Manifest link missing' };
+    const response = await fetch(manifestLink.href, { cache: 'no-store' });
+    if (!response.ok) return { error: `Manifest request failed: ${response.status}` };
+    const manifest = await response.json();
+    const registration = await Promise.race([
+      navigator.serviceWorker?.ready,
+      new Promise((resolve) => window.setTimeout(() => resolve(null), 10_000)),
+    ]);
+    return {
+      manifest,
+      serviceWorkerActive: Boolean(registration?.active),
+    };
+  });
+
+  assert(!pwa.error, pwa.error ?? 'Unknown PWA error');
+  assert(pwa.manifest?.name === 'مصروفي', 'Manifest app name is incorrect');
+  assert(pwa.manifest?.display === 'standalone', 'Manifest display mode is not standalone');
+  assert(pwa.manifest?.icons?.some((icon) => icon.sizes === '192x192' && icon.type === 'image/png'), '192x192 PNG icon missing from manifest');
+  assert(pwa.manifest?.icons?.some((icon) => icon.sizes === '512x512' && icon.type === 'image/png'), '512x512 PNG icon missing from manifest');
+  assert(pwa.serviceWorkerActive, 'Service Worker did not become active');
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   locale: 'ar-IQ',
@@ -57,6 +82,13 @@ page.on('console', (message) => {
 try {
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60_000 });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor({ timeout: 20_000 });
+  await verifyPwa(page);
+
+  const themeButton = page.getByRole('button', { name: /المظهر الحالي:/ });
+  await themeButton.waitFor();
+  await themeButton.click();
+  const savedTheme = await page.evaluate(() => localStorage.getItem('masroofi-theme'));
+  assert(savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system', 'Theme preference was not persisted');
 
   await deleteDatabase(page);
   await page.reload({ waitUntil: 'networkidle' });
@@ -66,8 +98,8 @@ try {
   await page.locator('#income-title').fill(testTitle);
   await page.locator('#income-amount').fill(String(amount));
   await page.locator('#income-note').fill('Smoke test على GitHub Pages الحقيقي');
-  await page.getByRole('button', { name: 'إضافة دخل', exact: true }).click();
-  await page.getByText('تمت إضافة الرصيد.', { exact: true }).waitFor({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'إضافة رصيد', exact: true }).click();
+  await page.getByText('💰 تمت إضافة الرصيد', { exact: true }).waitFor({ timeout: 10_000 });
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
 
   const beforeReload = await readTransactions(page);
@@ -90,6 +122,7 @@ try {
     if (message.type() === 'error') runtimeErrors.push(`console-after-reopen: ${message.text()}`);
   });
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60_000 });
+  await page.getByRole('button', { name: 'الدخل', exact: true }).click();
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
 
   const afterReopen = await readTransactions(page);
@@ -99,6 +132,7 @@ try {
 
   assert(runtimeErrors.length === 0, `Runtime errors detected:\n${runtimeErrors.join('\n')}`);
   console.log(`PASS: production URL loaded: ${baseUrl}`);
+  console.log('PASS: PWA manifest, PNG icons, Service Worker and persisted theme verified');
   console.log(`PASS: real IndexedDB persisted transaction across reload and page reopen: ${testTitle}`);
 } finally {
   try {
