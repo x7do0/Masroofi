@@ -1,25 +1,26 @@
-const longEnglishMonth = new Intl.DateTimeFormat('en-US-u-nu-latn', {
-  month: 'long',
-});
-
-const shortEnglishMonth = new Intl.DateTimeFormat('en-US-u-nu-latn', {
+const dateFormatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
   month: 'short',
+  day: 'numeric',
+  year: 'numeric',
 });
 
-const latinTime = new Intl.DateTimeFormat('ar-IQ-u-nu-latn', {
+const historyDateFormatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
+  weekday: 'long',
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+const monthYearFormatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
+  month: 'long',
+  year: 'numeric',
+});
+
+const timeFormatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
   hour: 'numeric',
   minute: '2-digit',
+  hour12: true,
 });
-
-const arabicWeekdays = [
-  'الأحد',
-  'الاثنين',
-  'الثلاثاء',
-  'الأربعاء',
-  'الخميس',
-  'الجمعة',
-  'السبت',
-];
 
 export function nowLocalInputValue(): string {
   const now = new Date();
@@ -28,26 +29,24 @@ export function nowLocalInputValue(): string {
 }
 
 export function formatDate(value: string): string {
-  const date = new Date(value);
-  return `${date.getDate()} ${longEnglishMonth.format(date)} ${date.getFullYear()}`;
+  return dateFormatter.format(new Date(value));
 }
 
 export function formatDateTime(value: string): string {
   const date = new Date(value);
-  return `${date.getDate()} ${shortEnglishMonth.format(date)}، ${latinTime.format(date)}`;
+  return `${dateFormatter.format(date)} • ${timeFormatter.format(date)}`;
 }
 
 export function formatHistoryDate(value: string): string {
-  const date = new Date(value);
-  return `${arabicWeekdays[date.getDay()]}، ${formatDate(value)}`;
+  return historyDateFormatter.format(new Date(value));
 }
 
 export function formatMonthYear(date: Date): string {
-  return `${longEnglishMonth.format(date)} ${date.getFullYear()}`;
+  return monthYearFormatter.format(date);
 }
 
 export function formatTime(value: string): string {
-  return latinTime.format(new Date(value));
+  return timeFormatter.format(new Date(value));
 }
 
 export function toLocalDateTimeValue(date: Date): string {

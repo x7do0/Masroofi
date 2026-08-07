@@ -1,0 +1,16 @@
+.date-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.transaction-date {
+  text-align: right;
+}
+
+.date-trigger-copy.date-ltr {
+  text-align: right;
+}
+
+.history-date-label .date-ltr {
+  text-align: right;
+}
