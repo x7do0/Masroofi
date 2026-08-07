@@ -6,7 +6,8 @@ const expenseTitle = `مصروف اختبار ${Date.now()}`;
 const amount = 123456;
 const expenseAmount = 25000;
 const arabicDigitPattern = /[٠-٩۰-۹]/;
-const englishMonthPattern = /January|February|March|April|May|June|July|August|September|October|November|December/;
+const englishMonthPattern = /January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/;
+const amPmPattern = /\b(?:AM|PM)\b/;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -89,6 +90,26 @@ async function verifyTransactionMenuLayer(page) {
   assert(layerCheck.menuOwnsTopElement, 'Transaction menu is visually covered by another row');
 }
 
+async function verifyBackupExperience(page) {
+  await page.getByRole('button', { name: 'النسخ الاحتياطي والاسترجاع' }).click();
+  const dialog = page.getByRole('dialog', { name: 'النسخ الاحتياطي والاسترجاع' });
+  await dialog.waitFor();
+  const dialogText = await dialog.innerText();
+  assert(!/JSON/i.test(dialogText), 'Backup UI exposes JSON terminology to the user');
+  assert(dialogText.includes('حفظ نسخة احتياطية'), 'Friendly backup action label is missing');
+  assert(dialogText.includes('استرجاع نسخة احتياطية'), 'Friendly restore action label is missing');
+
+  const fileInput = dialog.locator('input[type="file"]');
+  const accept = await fileInput.getAttribute('accept');
+  assert(accept?.includes('.masroofi') && accept.includes('.json'), 'Backup picker must accept new and legacy backup files');
+
+  const downloadPromise = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: /حفظ نسخة احتياطية/ }).click();
+  const download = await downloadPromise;
+  assert(download.suggestedFilename().endsWith('.masroofi'), 'Backup download does not use the friendly .masroofi file extension');
+  await dialog.getByRole('button', { name: 'إغلاق' }).click();
+}
+
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   locale: 'ar-IQ',
@@ -126,6 +147,7 @@ try {
   const dateTriggerText = await page.locator('.date-trigger').innerText();
   assert(!arabicDigitPattern.test(dateTriggerText), 'Date trigger still contains Arabic-Indic digits');
   assert(englishMonthPattern.test(dateTriggerText), 'Date trigger does not use an English month name');
+  assert(amPmPattern.test(dateTriggerText), 'Date trigger does not use AM/PM');
 
   await page.locator('#income-note').fill('Smoke test على GitHub Pages الحقيقي');
   await page.getByRole('button', { name: 'إضافة رصيد', exact: true }).click();
@@ -144,7 +166,9 @@ try {
   const historyText = await page.locator('.history-page').innerText();
   assert(!arabicDigitPattern.test(historyText), 'History still contains Arabic-Indic digits');
   assert(englishMonthPattern.test(historyText), 'History does not use English month names');
+  assert(amPmPattern.test(historyText), 'History does not use AM/PM');
   await verifyTransactionMenuLayer(page);
+  await verifyBackupExperience(page);
 
   const beforeReload = await readTransactions(page);
   const savedBeforeReload = beforeReload.find((item) => item.title === testTitle && item.amount === amount && item.type === 'income');
@@ -179,7 +203,8 @@ try {
   console.log(`PASS: production URL loaded: ${baseUrl}`);
   console.log('PASS: PWA manifest, PNG icons, Service Worker and persisted theme verified');
   console.log('PASS: amount inputs format thousands separators while typing');
-  console.log('PASS: visible dates use Latin digits and English month names');
+  console.log('PASS: dates are ordered with Latin digits, English months and AM/PM');
+  console.log('PASS: backup UI uses friendly language and .masroofi files while keeping legacy restore support');
   console.log('PASS: transaction action menu stays above sibling rows');
   console.log(`PASS: real IndexedDB persisted transaction across reload and page reopen: ${testTitle}`);
 } finally {
