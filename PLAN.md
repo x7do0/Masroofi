@@ -2,6 +2,7 @@
 
 ## 0. Foundation
 - [x] Repository + memory docs.
+- [x] QA evidence موثق.
 
 ## 1. Technical Setup
 - [x] React + TypeScript + Vite structure.
@@ -14,13 +15,14 @@
 - [x] Unified Transaction model.
 - [x] IndexedDB service.
 - [x] CRUD operations.
-- [ ] Persistence browser smoke test.
+- [x] CRUD synchronization مجرب في Chromium عبر QA harness.
+- [ ] Persistence بعد Reload مجرب على Origin حقيقي.
 
 ## 3. Core Finance Logic
 - [x] Balance derived from transactions.
 - [x] Income/expense totals.
 - [x] Chronological ordering.
-- [x] IQD formatting.
+- [x] IQD formatting بأرقام اعتيادية مثل `430,000 د.ع`.
 
 ## 4. App Shell & Navigation
 - [x] RTL shell.
@@ -50,36 +52,43 @@
 - [x] Unified chronological history.
 - [x] Filters.
 - [x] Edit/delete.
+- [x] Add/Edit/Delete synchronization verified.
 
 ## 9. Backup & Restore
 - [x] Export versioned JSON.
-- [x] Validate import أساسياً.
+- [x] Validate import + transaction fields/dates/duplicate IDs.
 - [x] Safe replace confirmation.
-- [ ] Harden validation + browser smoke test.
+- [x] Export/Restore browser flow verified عبر QA harness.
 
 ## 10. UX & Reliability Polish
 - [x] Responsive foundation.
 - [x] Custom delete confirmations.
 - [x] Reduced-motion support.
-- [ ] Browser visual QA.
-- [ ] Accessibility audit.
-- [ ] Edge-case pass.
+- [x] Mobile 390×844 visual QA.
+- [x] Desktop 1280×900 visual QA.
+- [x] Modern calendar QA on mobile + desktop.
+- [x] Basic accessibility pass for labels/button names/dialog labeling.
+- [x] No horizontal overflow in tested viewports.
 
 ## 11. Verification
 - [x] npm install.
 - [x] Typecheck.
 - [x] Lint.
 - [x] Production build.
-- [ ] CRUD smoke test.
-- [ ] IndexedDB persistence test.
-- [ ] Backup/Restore smoke test.
-- [ ] Mobile/desktop visual test.
+- [x] CRUD smoke test عبر browser harness.
+- [x] Backup/Restore smoke test عبر browser harness.
+- [x] Mobile/desktop visual test.
+- [ ] Real-origin IndexedDB persistence test after Reload/close/open.
 
 ## 12. GitHub Pages Production
 - [x] Vite base prepared for `/Masroofi/`.
 - [x] Deployment workflow prepared.
 - [ ] Production deploy from `main` after approval.
-- [ ] Published smoke test.
+- [ ] Published smoke test including real IndexedDB persistence.
+
+## Current gate
+
+المشروع حالياً Release Candidate على `feat/core-app`. لا ندمج إلى `main` ولا نعلن Production قبل نشره على GitHub Pages وفحص persistence على Origin فعلي.
 
 ## Completion rule
-No phase is considered production-ready until its real browser/build checks pass. Keep `PROJECT.md`, `DESIGN.md`, `DATA.md`, `DECISIONS.md`, and this plan aligned with actual behavior.
+No phase is considered production-ready until its real browser/build checks pass. Keep `PROJECT.md`, `DESIGN.md`, `DATA.md`, `DECISIONS.md`, `CHECKLIST.md`, `QA.md`, and this plan aligned with actual behavior.
