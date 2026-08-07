@@ -8,7 +8,7 @@
 - [x] RTL + Arabic document metadata.
 - [x] ESLint/TypeScript configuration.
 - [x] GitHub Pages base path.
-- [ ] Install/build/lint/typecheck verification.
+- [x] Install/build/lint/typecheck verification عبر GitHub Actions.
 
 ## 2. Data Model & Local Storage
 - [x] Unified Transaction model.
@@ -52,9 +52,10 @@
 - [x] Edit/delete.
 
 ## 9. Backup & Restore
-- [ ] Export versioned JSON.
-- [ ] Validate import.
-- [ ] Safe replace confirmation.
+- [x] Export versioned JSON.
+- [x] Validate import أساسياً.
+- [x] Safe replace confirmation.
+- [ ] Harden validation + browser smoke test.
 
 ## 10. UX & Reliability Polish
 - [x] Responsive foundation.
@@ -65,18 +66,19 @@
 - [ ] Edge-case pass.
 
 ## 11. Verification
-- [ ] npm install.
-- [ ] Typecheck.
-- [ ] Lint.
-- [ ] Production build.
+- [x] npm install.
+- [x] Typecheck.
+- [x] Lint.
+- [x] Production build.
 - [ ] CRUD smoke test.
 - [ ] IndexedDB persistence test.
+- [ ] Backup/Restore smoke test.
 - [ ] Mobile/desktop visual test.
 
 ## 12. GitHub Pages Production
 - [x] Vite base prepared for `/Masroofi/`.
-- [ ] Deployment workflow.
-- [ ] Production deploy.
+- [x] Deployment workflow prepared.
+- [ ] Production deploy from `main` after approval.
 - [ ] Published smoke test.
 
 ## Completion rule
