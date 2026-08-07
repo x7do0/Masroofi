@@ -65,7 +65,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
       <section className="history-list">
         {grouped.length > 0 ? grouped.map(([dateLabel, items]) => (
           <div className="history-group" key={dateLabel}>
-            <div className="history-date-label"><span>{dateLabel}</span><i /></div>
+            <div className="history-date-label"><span className="date-ltr" dir="ltr">{dateLabel}</span><i /></div>
             <div className="transactions-panel">
               {items.map((transaction) => (
                 <TransactionRow
