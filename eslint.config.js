@@ -11,6 +11,7 @@ export default tseslint.config(
       ecmaVersion: 2023,
     },
     rules: {
+      'no-undef': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
