@@ -38,7 +38,7 @@ export function TransactionRow({ transaction, onEdit, onDelete, compact = false 
           <strong>{transaction.title}</strong>
           {!compact && <span className={`type-label ${isIncome ? 'income' : 'expense'}`}>{isIncome ? 'دخل' : 'مصروف'}</span>}
         </div>
-        <span>{formatDateTime(transaction.occurredAt)}</span>
+        <span className="transaction-date date-ltr" dir="ltr">{formatDateTime(transaction.occurredAt)}</span>
         {!compact && transaction.note && <p>{transaction.note}</p>}
       </div>
       <div className="transaction-side">
