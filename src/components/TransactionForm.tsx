@@ -59,13 +59,13 @@ export function TransactionForm({ type, editing, onSubmit, onCancelEdit }: Trans
   };
 
   return (
-    <section className="form-card">
+    <section className="form-card form-card-polished">
       <div className="section-heading">
         <div className={`section-icon ${isIncome ? 'income' : 'expense'}`}>
           {isIncome ? <Banknote size={20} /> : <ReceiptText size={20} />}
         </div>
         <div>
-          <h2>{editing ? `تعديل ${isIncome ? 'الدخل' : 'المصروف'}` : isIncome ? 'إضافة دخل جديد' : 'إضافة مصروف جديد'}</h2>
+          <h2>{editing ? `تعديل ${isIncome ? 'الدخل' : 'المصروف'}` : isIncome ? 'إضافة رصيد جديد' : 'إضافة مصروف جديد'}</h2>
           <p>{editing ? 'عدّل ما تحتاج، وكل شيء يتحدث مباشرة.' : 'الاسم والمبلغ فقط مطلوبان، والباقي اختياري.'}</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function TransactionForm({ type, editing, onSubmit, onCancelEdit }: Trans
         )}
         <button type="button" className="button primary grow" onClick={() => void submit()} disabled={submitting}>
           {editing ? <Save size={18} /> : <Plus size={18} />}
-          <span>{submitting ? 'جاري الحفظ...' : editing ? 'حفظ التعديل' : isIncome ? 'إضافة دخل' : 'إضافة مصروف'}</span>
+          <span>{submitting ? 'جاري الحفظ...' : editing ? 'حفظ التعديل' : isIncome ? 'إضافة رصيد' : 'إضافة مصروف'}</span>
         </button>
       </div>
     </section>
