@@ -52,7 +52,7 @@ export default function App() {
           <p>{meta.subtitle}</p>
         </div>
         <div className="header-actions">
-          <DataTools transactions={transactions} onRestore={restore} />
+          <DataTools transactions={transactions} onRestore={restore} disabled={loading} />
         </div>
       </header>
 
