@@ -12,6 +12,12 @@ function toStored(transaction: Transaction): StoredTransaction {
   return transaction;
 }
 
+export interface MergeResult {
+  added: number;
+  updated: number;
+  total: number;
+}
+
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +84,31 @@ export function useTransactions() {
     setTransactions([...items].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)));
   }, []);
 
+  const merge = useCallback(async (items: Transaction[]): Promise<MergeResult> => {
+    const byId = new Map(transactions.map((item) => [item.id, item]));
+    let added = 0;
+    let updated = 0;
+
+    for (const incoming of items) {
+      const existing = byId.get(incoming.id);
+      if (!existing) {
+        byId.set(incoming.id, incoming);
+        added += 1;
+        continue;
+      }
+
+      if (new Date(incoming.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+        byId.set(incoming.id, incoming);
+        updated += 1;
+      }
+    }
+
+    const merged = [...byId.values()].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+    await replaceTransactions(merged.map(toStored));
+    setTransactions(merged);
+    return { added, updated, total: merged.length };
+  }, [transactions]);
+
   const totals = useMemo(() => {
     let income = 0;
     let expenses = 0;
@@ -88,5 +119,5 @@ export function useTransactions() {
     return { income, expenses, balance: income - expenses };
   }, [transactions]);
 
-  return { transactions, loading, error, totals, add, update, remove, restore, refresh };
+  return { transactions, loading, error, totals, add, update, remove, restore, merge, refresh };
 }
