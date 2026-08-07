@@ -6,9 +6,10 @@ import { createBackup, validateBackup } from '../utils/backup';
 interface DataToolsProps {
   transactions: Transaction[];
   onRestore: (transactions: Transaction[]) => Promise<void>;
+  disabled?: boolean;
 }
 
-export function DataTools({ transactions, onRestore }: DataToolsProps) {
+export function DataTools({ transactions, onRestore, disabled = false }: DataToolsProps) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pendingRestore, setPendingRestore] = useState<Transaction[] | null>(null);
@@ -53,11 +54,18 @@ export function DataTools({ transactions, onRestore }: DataToolsProps) {
 
   return (
     <>
-      <button type="button" className="header-tool" onClick={() => setOpen(true)} aria-label="النسخ الاحتياطي والاسترجاع" title="النسخ الاحتياطي">
+      <button
+        type="button"
+        className="header-tool"
+        onClick={() => setOpen(true)}
+        aria-label={disabled ? 'جاري تحميل البيانات' : 'النسخ الاحتياطي والاسترجاع'}
+        title={disabled ? 'جاري تحميل البيانات' : 'النسخ الاحتياطي'}
+        disabled={disabled}
+      >
         <DatabaseBackup size={19} />
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setOpen(false);
         }}>
