@@ -27,6 +27,6 @@ export const emptyStates: Record<EmptyStateKey, EmptyStateContent> = {
   history: {
     emoji: '📒',
     title: 'السجل فارغ',
-    description: 'الدخل والمصروفات راح تظهر هنا مرتبة حسب التاريخ.',
+    description: 'الدخل والمصروفات والديون وتسديداتها راح تظهر هنا مرتبة حسب التاريخ.',
   },
 };

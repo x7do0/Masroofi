@@ -5,12 +5,7 @@ import './styles/global.css';
 import './styles/data-tools.css';
 import './styles/polish.css';
 import './styles/data-safety.css';
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('./sw.js');
-  });
-}
+import './styles/debts.css';
 
 if (navigator.storage?.persist) {
   void navigator.storage.persist().catch(() => false);

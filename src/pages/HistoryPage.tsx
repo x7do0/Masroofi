@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ListFilter, WalletCards, X } from 'lucide-react';
+import { ListFilter, WalletCards } from 'lucide-react';
 import type { Transaction, TransactionInput, TransactionType } from '../types/transaction';
 import { formatIQD } from '../utils/currency';
 import { formatHistoryDate } from '../utils/date';
@@ -8,6 +8,9 @@ import { TransactionForm } from '../components/TransactionForm';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { emptyStates } from '../content/emptyStates';
+import { DebtForm } from '../components/DebtForm';
+import { Modal } from '../components/Modal';
+import { getDebts, getTransactionTitle } from '../services/ledger';
 
 type HistoryFilter = 'all' | TransactionType;
 
@@ -22,6 +25,8 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
   const [filter, setFilter] = useState<HistoryFilter>('all');
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
+  const debts = useMemo(() => getDebts(transactions), [transactions]);
+  const editedDebt = editing && debts.find((debt) => debt.transaction.id === (editing.type === 'debt_repayment' ? editing.debtId : editing.id));
 
   const visible = useMemo(
     () => filter === 'all' ? transactions : transactions.filter((item) => item.type === filter),
@@ -60,6 +65,8 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
         <button type="button" className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>الكل</button>
         <button type="button" className={filter === 'income' ? 'active income' : ''} onClick={() => setFilter('income')}>الدخل</button>
         <button type="button" className={filter === 'expense' ? 'active expense' : ''} onClick={() => setFilter('expense')}>المصروفات</button>
+        <button type="button" className={filter === 'debt_given' ? 'active debt' : ''} onClick={() => setFilter('debt_given')}>إعطاء دين</button>
+        <button type="button" className={filter === 'debt_repayment' ? 'active debt' : ''} onClick={() => setFilter('debt_repayment')}>تسديد دين</button>
       </div>
 
       <section className="history-list">
@@ -71,6 +78,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
                 <TransactionRow
                   key={transaction.id}
                   transaction={transaction}
+                  displayTitle={getTransactionTitle(transaction, transactions)}
                   onEdit={setEditing}
                   onDelete={setPendingDelete}
                 />
@@ -85,11 +93,21 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
       </section>
 
       {editing && (
-        <div className="dialog-backdrop edit-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setEditing(null);
-        }}>
-          <div className="edit-dialog" role="dialog" aria-modal="true" aria-label="تعديل العملية">
-            <button type="button" className="icon-button edit-close" aria-label="إغلاق" onClick={() => setEditing(null)}><X size={18} /></button>
+        <Modal title="تعديل العملية" onClose={() => setEditing(null)}>
+          {editing.type === 'debt_given' || editing.type === 'debt_repayment' ? (
+            <DebtForm
+              type={editing.type}
+              editing={editing}
+              debt={editedDebt?.transaction}
+              minAmount={editing.type === 'debt_given' ? editedDebt?.repaid : undefined}
+              maxAmount={editing.type === 'debt_repayment' && editedDebt ? editedDebt.remaining + editing.amount : undefined}
+              onSubmit={async (input) => {
+                await onUpdate(editing.id, input);
+                setEditing(null);
+              }}
+              onCancelEdit={() => setEditing(null)}
+            />
+          ) : (
             <TransactionForm
               type={editing.type}
               editing={editing}
@@ -99,16 +117,16 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
               }}
               onCancelEdit={() => setEditing(null)}
             />
-          </div>
-        </div>
+          )}
+        </Modal>
       )}
 
       <ConfirmDialog
         open={Boolean(pendingDelete)}
-        title="حذف العملية؟"
-        description="راح تنحذف من كل السجلات ويتحدث الرصيد مباشرة."
+        title={pendingDelete?.type === 'debt_given' ? 'حذف الدين وكل تسديداته؟' : 'حذف العملية؟'}
+        description={pendingDelete?.type === 'debt_given' ? 'راح ينحذف الدين وكل دفعاته المرتبطة من السجل، وينعكس أثرها بالكامل على الرصيد. ما نكدر نرجعها إلا من نسخة احتياطية.' : 'راح تنحذف من كل السجلات ويتحدث الرصيد والمتبقي من الدين مباشرة.'}
         onClose={() => setPendingDelete(null)}
-        onConfirm={() => void confirmDelete()}
+        onConfirm={confirmDelete}
       />
     </div>
   );

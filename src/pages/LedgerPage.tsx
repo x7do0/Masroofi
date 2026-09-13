@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Banknote, ReceiptText } from 'lucide-react';
-import type { Transaction, TransactionInput, TransactionType } from '../types/transaction';
+import type { Transaction, TransactionInput } from '../types/transaction';
 import { formatIQD } from '../utils/currency';
 import { TransactionForm } from '../components/TransactionForm';
 import { TransactionRow } from '../components/TransactionRow';
@@ -9,7 +9,7 @@ import { EmptyState } from '../components/EmptyState';
 import { emptyStates } from '../content/emptyStates';
 
 interface LedgerPageProps {
-  type: TransactionType;
+  type: 'income' | 'expense';
   transactions: Transaction[];
   onAdd: (input: TransactionInput) => Promise<Transaction>;
   onUpdate: (id: string, input: TransactionInput) => Promise<void>;
@@ -86,7 +86,7 @@ export function LedgerPage({ type, transactions, onAdd, onUpdate, onDelete }: Le
         title={`حذف ${isIncome ? 'الدخل' : 'المصروف'}؟`}
         description="راح ينحذف من السجل ويتحدث الرصيد مباشرة. ما نكدر نرجعه إلا من نسخة احتياطية."
         onClose={() => setPendingDelete(null)}
-        onConfirm={() => void confirmDelete()}
+        onConfirm={confirmDelete}
       />
     </div>
   );

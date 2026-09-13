@@ -31,6 +31,8 @@ jobs:
         run: npm run typecheck
       - name: Lint
         run: npm run lint
+      - name: Test financial ledger and backups
+        run: npm test
       - name: Build
         run: npm run build
       - name: Setup Pages

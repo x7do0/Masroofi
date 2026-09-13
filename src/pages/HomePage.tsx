@@ -7,6 +7,7 @@ import { EmptyState } from '../components/EmptyState';
 import { AnimatedMoney } from '../components/AnimatedMoney';
 import { emptyStates } from '../content/emptyStates';
 import { LOW_BALANCE_THRESHOLD_IQD } from '../config/experience';
+import { getTotals, getTransactionTitle } from '../services/ledger';
 
 interface HomePageProps {
   transactions: Transaction[];
@@ -25,8 +26,7 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
     const date = new Date(item.occurredAt);
     return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
   });
-  const monthIncome = monthTransactions.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.amount, 0);
-  const monthExpenses = monthTransactions.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
+  const { income: monthIncome, expenses: monthExpenses } = getTotals(monthTransactions.filter((item) => item.type === 'income' || item.type === 'expense'));
   const balanceStatus: BalanceStatus = transactions.length === 0
     ? 'empty'
     : balance < 0
@@ -40,7 +40,7 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
       ? 'رصيدك حالياً بالسالب.'
       : balanceStatus === 'low'
         ? 'رصيدك قريب من الحد المنخفض المحدد.'
-        : 'محسوب تلقائياً من كل الدخل والمصروفات.';
+        : 'محسوب تلقائياً من كل حركة على رصيدك.';
 
   return (
     <div className="page-stack home-page">
@@ -111,7 +111,7 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
 
         <div className="transactions-panel">
           {recent.length > 0 ? recent.map((transaction) => (
-            <TransactionRow key={transaction.id} transaction={transaction} compact />
+            <TransactionRow key={transaction.id} transaction={transaction} displayTitle={getTransactionTitle(transaction, transactions)} compact />
           )) : (
             <EmptyState content={emptyStates.home} onAction={() => onNavigate('income')} />
           )}

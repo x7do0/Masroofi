@@ -8,6 +8,8 @@ import { useTransactions } from './hooks/useTransactions';
 import { HomePage } from './pages/HomePage';
 import { LedgerPage } from './pages/LedgerPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { DebtsPage } from './pages/DebtsPage';
+import { PwaUpdate } from './components/PwaUpdate';
 import type { Transaction, TransactionInput } from './types/transaction';
 import { appExperience } from './config/experience';
 
@@ -15,6 +17,7 @@ const pageMeta: Record<AppPage, { title: string; subtitle: string }> = {
   home: { title: 'مصروفي', subtitle: 'رصيدك وحركتك المالية بمكان واحد' },
   expenses: { title: 'المصروفات', subtitle: 'أضف وتتبع كل مصروفاتك' },
   income: { title: 'الدخل', subtitle: 'سجل كل المبالغ اللي تدخل لرصيدك' },
+  debts: { title: 'الديون', subtitle: 'فلوسك عند الناس وتسديداتها بمكان واحد' },
   history: { title: 'السجل', subtitle: 'كل العمليات مرتبة بمكان واحد' },
 };
 
@@ -36,7 +39,8 @@ export default function App() {
   const addWithFeedback = useCallback(async (input: TransactionInput): Promise<Transaction> => {
     try {
       const item = await add(input);
-      notify('success', input.type === 'income' ? '💰 تمت إضافة الرصيد' : '🧾 تمت إضافة المصروف');
+      const messages = { income: '💰 تمت إضافة الرصيد', expense: '🧾 تمت إضافة المصروف', debt_given: 'تمت إضافة الدين', debt_repayment: 'تم تسجيل التسديد' };
+      notify('success', messages[input.type]);
       return item;
     } catch (cause) {
       notify('error', 'تعذر حفظ العملية');
@@ -104,11 +108,13 @@ export default function App() {
       case 'home':
         return <HomePage transactions={transactions} {...totals} onNavigate={navigate} />;
       case 'income':
-        return <LedgerPage type="income" transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
+        return <LedgerPage key="income" type="income" transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
       case 'expenses':
-        return <LedgerPage type="expense" transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
+        return <LedgerPage key="expense" type="expense" transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
       case 'history':
         return <HistoryPage transactions={transactions} balance={totals.balance} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
+      case 'debts':
+        return <DebtsPage transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
       default:
         return null;
     }
@@ -134,10 +140,11 @@ export default function App() {
       </header>
 
       {error && <div className="global-error" role="alert">{error}</div>}
+      <PwaUpdate />
 
       <main className="app-main">{content}</main>
 
-      <QuickAdd onNavigate={navigate} />
+      {page !== 'debts' && <QuickAdd onNavigate={navigate} />}
       <BottomNav page={page} onChange={navigate} />
       <ToastStack items={toasts} />
     </div>

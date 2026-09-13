@@ -1,6 +1,6 @@
-import { Home, List, TrendingDown, TrendingUp } from 'lucide-react';
+import { HandCoins, Home, List, TrendingDown, TrendingUp } from 'lucide-react';
 
-export type AppPage = 'home' | 'expenses' | 'income' | 'history';
+export type AppPage = 'home' | 'expenses' | 'income' | 'debts' | 'history';
 
 interface BottomNavProps {
   page: AppPage;
@@ -11,6 +11,7 @@ const items = [
   { id: 'home' as const, label: 'الرئيسية', icon: Home },
   { id: 'expenses' as const, label: 'المصروفات', icon: TrendingDown },
   { id: 'income' as const, label: 'الدخل', icon: TrendingUp },
+  { id: 'debts' as const, label: 'الديون', icon: HandCoins },
   { id: 'history' as const, label: 'السجل', icon: List },
 ];
 

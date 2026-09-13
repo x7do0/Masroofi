@@ -1,123 +1,92 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Transaction, TransactionInput } from '../types/transaction';
 import {
+  addTransaction,
   deleteTransaction,
   getAllTransactions,
-  putTransaction,
+  mergeTransactions,
   replaceTransactions,
-  type StoredTransaction,
+  TRANSACTIONS_CHANGED_EVENT,
+  TRANSACTIONS_CHANNEL,
+  updateTransaction,
 } from '../services/db';
+import { getDebts, getTotals } from '../services/ledger';
 
-function toStored(transaction: Transaction): StoredTransaction {
-  return transaction;
-}
-
-export interface MergeResult {
-  added: number;
-  updated: number;
-  total: number;
-}
+export type { MergeResult } from '../services/db';
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const refreshSequence = useRef(0);
 
   const refresh = useCallback(async () => {
+    const sequence = ++refreshSequence.current;
     try {
-      setError(null);
       const items = await getAllTransactions();
+      if (sequence !== refreshSequence.current) return;
       setTransactions(items);
+      setError(null);
     } catch (cause) {
+      if (sequence !== refreshSequence.current) return;
       setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات.');
     } finally {
-      setLoading(false);
+      if (sequence === refreshSequence.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const reload = () => { void refresh(); };
+    const onVisibility = () => { if (document.visibilityState === 'visible') reload(); };
+    let channel: BroadcastChannel | undefined;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        channel = new BroadcastChannel(TRANSACTIONS_CHANNEL);
+        channel.onmessage = reload;
+      }
+    } catch { /* Focus/visibility events still refresh browsers without an available channel. */ }
+    window.addEventListener(TRANSACTIONS_CHANGED_EVENT, reload);
+    window.addEventListener('focus', reload);
+    document.addEventListener('visibilitychange', onVisibility);
+    reload();
+    return () => {
+      ++refreshSequence.current;
+      channel?.close();
+      window.removeEventListener(TRANSACTIONS_CHANGED_EVENT, reload);
+      window.removeEventListener('focus', reload);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [refresh]);
 
   const add = useCallback(async (input: TransactionInput) => {
-    const now = new Date().toISOString();
-    const item: Transaction = {
-      id: crypto.randomUUID(),
-      type: input.type,
-      title: input.title.trim(),
-      amount: Math.round(input.amount),
-      occurredAt: input.occurredAt,
-      note: input.note?.trim() || null,
-      emoji: input.emoji || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await putTransaction(toStored(item));
-    setTransactions((current) => [item, ...current].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)));
+    const item = await addTransaction(input);
+    await refresh();
     return item;
-  }, []);
+  }, [refresh]);
 
   const update = useCallback(async (id: string, input: TransactionInput) => {
-    const current = transactions.find((item) => item.id === id);
-    if (!current) throw new Error('العملية غير موجودة.');
-
-    const item: Transaction = {
-      ...current,
-      ...input,
-      title: input.title.trim(),
-      amount: Math.round(input.amount),
-      note: input.note?.trim() || null,
-      emoji: input.emoji || null,
-      updatedAt: new Date().toISOString(),
-    };
-    await putTransaction(toStored(item));
-    setTransactions((items) => items.map((candidate) => (candidate.id === id ? item : candidate)).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)));
-  }, [transactions]);
+    await updateTransaction(id, input);
+    await refresh();
+  }, [refresh]);
 
   const remove = useCallback(async (id: string) => {
     await deleteTransaction(id);
-    setTransactions((items) => items.filter((item) => item.id !== id));
-  }, []);
+    await refresh();
+  }, [refresh]);
 
   const restore = useCallback(async (items: Transaction[]) => {
-    await replaceTransactions(items.map(toStored));
-    setTransactions([...items].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)));
-  }, []);
+    await replaceTransactions(items);
+    await refresh();
+  }, [refresh]);
 
-  const merge = useCallback(async (items: Transaction[]): Promise<MergeResult> => {
-    const byId = new Map(transactions.map((item) => [item.id, item]));
-    let added = 0;
-    let updated = 0;
+  const merge = useCallback(async (items: Transaction[]) => {
+    const result = await mergeTransactions(items);
+    await refresh();
+    return result;
+  }, [refresh]);
 
-    for (const incoming of items) {
-      const existing = byId.get(incoming.id);
-      if (!existing) {
-        byId.set(incoming.id, incoming);
-        added += 1;
-        continue;
-      }
+  const totals = useMemo(() => getTotals(transactions), [transactions]);
+  const debts = useMemo(() => getDebts(transactions), [transactions]);
 
-      if (new Date(incoming.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
-        byId.set(incoming.id, incoming);
-        updated += 1;
-      }
-    }
-
-    const merged = [...byId.values()].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
-    await replaceTransactions(merged.map(toStored));
-    setTransactions(merged);
-    return { added, updated, total: merged.length };
-  }, [transactions]);
-
-  const totals = useMemo(() => {
-    let income = 0;
-    let expenses = 0;
-    for (const item of transactions) {
-      if (item.type === 'income') income += item.amount;
-      else expenses += item.amount;
-    }
-    return { income, expenses, balance: income - expenses };
-  }, [transactions]);
-
-  return { transactions, loading, error, totals, add, update, remove, restore, merge, refresh };
+  return { transactions, loading, error, totals, debts, add, update, remove, restore, merge, refresh };
 }

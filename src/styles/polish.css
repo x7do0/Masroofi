@@ -1,5 +1,7 @@
 /* Polish layer: isolated so the original layout stays easy to reason about. */
 
+.pwa-update { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px; margin-bottom: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; font-size: .85rem; }
+
 .app-emoji-mark { font-size: 1.42rem; line-height: 1; }
 .polish-actions { gap: 7px; }
 
