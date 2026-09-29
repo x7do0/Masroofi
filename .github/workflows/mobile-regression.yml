@@ -44,9 +44,24 @@ jobs:
           MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
         run: node scripts/mobile-regression.mjs
       - name: Verify concurrent tabs and legacy notifications
+        if: success() || failure()
         env:
           MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
         run: node scripts/cross-tab-regression.mjs
+      - name: Verify PWA, financial flows and offline persistence on preview
+        if: success() || failure()
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4318 --strictPort > "$RUNNER_TEMP/masroofi-preview.log" 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 100); do
+            curl -fsS http://127.0.0.1:4318/Masroofi/ > /dev/null && break
+            sleep 0.1
+          done
+          mkdir -p "$RUNNER_TEMP/masroofi-ui-qa"
+          cd "$RUNNER_TEMP/masroofi-ui-qa"
+          MASROOFI_URL=http://127.0.0.1:4318/Masroofi/ node "$GITHUB_WORKSPACE/scripts/production-smoke.mjs" > preview-smoke.log 2>&1 || { cat preview-smoke.log; exit 1; }
+          cat preview-smoke.log
       - name: Upload synthetic QA evidence
         if: always()
         uses: actions/upload-artifact@v4

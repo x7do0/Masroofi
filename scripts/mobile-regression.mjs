@@ -1,4 +1,4 @@
-// Uses isolated browser profiles and synthetic data only. Never run against a user's profile.
+// Isolated profiles and synthetic records only; never a user's browser or ledger.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
@@ -22,7 +22,15 @@ const server = createServer(async (req, res) => {
 });
 await new Promise((done) => server.listen(0, '127.0.0.1', done));
 const url = `http://127.0.0.1:${server.address().port}/Masroofi/`;
-
+const browsers = [];
+const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+// Geometry assertions, like locator assertions, must await React/browser commits.
+// Retrying only observes the page: no forced clicks, styles or event injection.
+async function eventually(check, message) {
+  const until = Date.now() + 4000;
+  do { if (await check()) return; await pause(40); } while (Date.now() < until);
+  assert.fail(message);
+}
 function data(count) {
   return Array.from({ length: count }, (_, i) => {
     const type = ['income', 'expense', 'debt_given', 'debt_repayment', 'income'][i % 5];
@@ -35,10 +43,14 @@ function data(count) {
 }
 async function ready(page) {
   await page.locator('.loading-state').waitFor({ state: 'hidden', timeout: 120000 });
-  await page.locator('.home-page, .history-page, .ledger-page, .debts-page, .balance-card').first().waitFor({ timeout: 120000 });
+  await page.locator('.balance-card').waitFor({ timeout: 120000 });
   assert.match(await page.title(), /مصروفي/);
-  assert.equal(await page.locator('vite-error-overlay').count(), 0);
-  assert.equal(await page.locator('.global-error').count(), 0);
+  assert.equal(await page.locator('vite-error-overlay, .global-error').count(), 0);
+}
+async function contextFor(browser, width, height) {
+  const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+  await context.route('https://gc.zgo.at/count.js', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+  return context;
 }
 async function prepare(context, count) {
   const page = await context.newPage();
@@ -87,63 +99,49 @@ async function bottom(page) {
 async function hit(locator) {
   return locator.evaluate((button) => {
     const r = button.getBoundingClientRect();
-    const x = r.left + r.width / 2;
-    const y = r.top + r.height / 2;
-    // Samples stay inside the rounded button rather than its clipped corners.
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
     return [[x, y], [r.left + 4, y], [r.right - 4, y], [x, r.top + 4], [x, r.bottom - 4]]
       .every(([x, y]) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight && button.contains(document.elementFromPoint(x, y)));
   });
 }
-async function menuClear(page) {
-  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-  const result = await page.locator('.row-menu-popover').evaluate((menu) => {
-    const r = menu.getBoundingClientRect();
-    const trigger = document.querySelector('.transaction-menu-trigger[aria-expanded="true"]');
-    const a = trigger.getBoundingClientRect();
-    const blockers = [...document.querySelectorAll('.bottom-nav, .quick-add')].filter((el) => el.getClientRects().length);
-    const clear = r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 &&
-      blockers.every((el) => { const b = el.getBoundingClientRect(); return !(r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top); });
-    const attached = Math.min(Math.abs(r.top - a.bottom), Math.abs(r.bottom - a.top)) <= 16;
-    return { clear, attached, menu: r.toJSON(), trigger: a.toJSON(), inline: menu.getAttribute('style'),
-      computed: { top: getComputedStyle(menu).top, left: getComputedStyle(menu).left, transform: getComputedStyle(menu).transform },
-      visualViewport: { width: visualViewport?.width, height: visualViewport?.height, offsetTop: visualViewport?.offsetTop },
-      scrollY, scrollHeight: document.documentElement.scrollHeight, focused: document.activeElement?.outerHTML };
-  });
-  if (!result.clear || !result.attached) report.menuFailure = result;
-  return result.clear && result.attached;
+async function verifyMenu(page) {
+  await page.getByRole('menu', { name: 'إجراءات العملية' }).waitFor();
+  let last;
+  await eventually(async () => {
+    last = await page.getByRole('menu', { name: 'إجراءات العملية' }).evaluate((menu) => {
+      const r = menu.getBoundingClientRect();
+      const a = document.querySelector('.transaction-menu-trigger[aria-expanded="true"]').getBoundingClientRect();
+      const controls = [...document.querySelectorAll('.bottom-nav, .quick-add')].filter((el) => el.getClientRects().length);
+      const clear = r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 &&
+        controls.every((el) => { const b = el.getBoundingClientRect(); return !(r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top); });
+      const attached = Math.min(Math.abs(r.top - a.bottom), Math.abs(r.bottom - a.top)) <= 16;
+      const ownsPoint = menu.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+      return { clear, attached, ownsPoint, menu: r.toJSON(), trigger: a.toJSON(), inline: menu.getAttribute('style'),
+        computed: { top: getComputedStyle(menu).top, left: getComputedStyle(menu).left }, scrollY, scrollHeight: document.documentElement.scrollHeight };
+    });
+    return last.clear && last.attached && last.ownsPoint;
+  }, 'Menu must remain attached, inside the viewport and above fixed controls').catch((error) => { report.menuFailure = last; throw error; });
 }
 async function lastOptions(page) {
   await bottom(page);
   const buttons = page.locator('.transaction-row').getByRole('button', { name: 'خيارات العملية' });
   const count = await buttons.count();
-  for (let index = Math.max(0, count - 3); index < count; ++index) {
-    const button = buttons.nth(index);
+  for (let i = Math.max(0, count - 3); i < count; ++i) {
+    const button = buttons.nth(i);
     await button.scrollIntoViewIfNeeded();
-    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-    if (!(await hit(button))) {
-      const geometry = await button.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return { button: r.toJSON(), hit: document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.outerHTML,
-          controls: [...document.querySelectorAll('.bottom-nav, .quick-add')].map((item) => ({ class: item.className, rect: item.getBoundingClientRect().toJSON() })),
-          padding: getComputedStyle(document.querySelector('.app-shell')).paddingBottom, scrollY, scrollHeight: document.documentElement.scrollHeight };
-      });
-      report.cases.push({ obstruction: index, geometry });
-      throw new Error(`options ${index} must be genuinely hit-testable: ${JSON.stringify(geometry)}`);
-    }
-    await button.click();
-    assert.ok(await menuClear(page), 'menu must clear fixed controls and remain attached to its trigger');
+    await eventually(() => hit(button), `Options ${i} must be genuinely hit-testable`);
+    await button.click(); // Never force; interception is the regression.
+    await verifyMenu(page);
     await page.keyboard.press('Escape');
-    assert.ok(await button.evaluate((el) => el === document.activeElement));
+    await eventually(() => button.evaluate((el) => el === document.activeElement), 'Escape must restore trigger focus');
   }
 }
-
-const browsers = [];
 try {
   const browser = await chromium.launch();
   browsers.push(browser);
   const views = baseline ? [[430, 800]] : [[360, 800], [390, 844], [430, 800], [768, 900], [1280, 900], [800, 390]];
   for (const [width, height] of views) {
-    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+    const context = await contextFor(browser, width, height);
     const { page } = await prepare(context, 100);
     await history(page, 100);
     await bottom(page);
@@ -153,11 +151,11 @@ try {
       report.cases.push({ viewport: [width, height], lastOptionsReachable: reachable });
       assert.equal(reachable, false, 'baseline must reproduce the reported obstruction');
     } else {
+      report.currentCase = { width, height, stage: 'light' };
       await lastOptions(page);
       await bottom(page);
-      const last = page.getByRole('button', { name: 'خيارات العملية' }).last();
-      await last.click();
-      assert.ok(await menuClear(page));
+      await page.getByRole('button', { name: 'خيارات العملية' }).last().click();
+      await verifyMenu(page);
       await page.screenshot({ path: join(output, `after-${width}.png`) });
       const balance = await page.locator('.history-balance strong').innerText();
       await page.getByRole('menuitem', { name: 'تعديل', exact: true }).click();
@@ -167,6 +165,7 @@ try {
       await dialog.getByRole('button', { name: 'حفظ التعديل', exact: true }).click();
       await dialog.waitFor({ state: 'hidden' });
       await page.getByText(`تعديل تجريبي ${width}`, { exact: true }).waitFor();
+      await pause(80);
       const reads = await page.evaluate(() => window.__qaReads);
       assert.equal(reads, 1, 'one committed edit should trigger one readonly ledger read');
       assert.equal(await page.locator('.history-balance strong').innerText(), balance);
@@ -174,11 +173,14 @@ try {
       await ready(page);
       await history(page, 100);
       await page.getByText(`تعديل تجريبي ${width}`, { exact: true }).waitFor();
+      report.currentCase.stage = 'dark-safe-area';
       await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; document.documentElement.style.setProperty('--app-safe-bottom', '34px'); });
       await lastOptions(page);
+      report.currentCase.stage = 'text-zoom';
       await page.evaluate(() => { document.documentElement.style.fontSize = '24px'; });
       await lastOptions(page);
       for (const name of ['الدخل', 'المصروفات']) {
+        report.currentCase.stage = name;
         await page.locator('.bottom-nav').getByRole('button', { name, exact: true }).click();
         await lastOptions(page);
       }
@@ -191,7 +193,7 @@ try {
   }
   if (!baseline) {
     for (const count of [0, 1]) {
-      const context = await browser.newContext({ viewport: { width: 430, height: 800 }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+      const context = await contextFor(browser, 430, 800);
       const { page } = await prepare(context, count);
       await history(page, count);
       if (count) {
@@ -204,7 +206,7 @@ try {
     }
     const safari = await webkit.launch();
     browsers.push(safari);
-    const context = await safari.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+    const context = await contextFor(safari, 390, 844);
     const { page } = await prepare(context, 100);
     await history(page, 100);
     await lastOptions(page);
@@ -213,7 +215,7 @@ try {
     await context.close();
   }
   for (const count of [100, 1000, 10000]) {
-    const context = await browser.newContext({ viewport: { width: 430, height: 800 }, reducedMotion: 'reduce', serviceWorkers: 'block' });
+    const context = await contextFor(browser, 430, 800);
     const { page, loadMs } = await prepare(context, count);
     const historyMs = await history(page, count);
     const start = performance.now();
@@ -223,16 +225,13 @@ try {
     await context.close();
   }
   assert.deepEqual(report.errors, [], 'no browser runtime/console errors');
+  delete report.currentCase;
   report.passed = true;
 } catch (error) {
   report.failure = error.stack;
   console.log(`::error::${String(error.message).replaceAll('\n', '%0A')}`);
-  for (const browser of browsers) {
-    for (const [i, context] of browser.contexts().entries()) {
-      for (const [j, page] of context.pages().entries()) {
-        await page.screenshot({ path: join(output, `${label}-failure-${i}-${j}.png`) }).catch(() => {});
-      }
-    }
+  for (const browser of browsers) for (const [i, context] of browser.contexts().entries()) for (const [j, page] of context.pages().entries()) {
+    await page.screenshot({ path: join(output, `${label}-failure-${i}-${j}.png`) }).catch(() => {});
   }
   process.exitCode = 1;
 } finally {
