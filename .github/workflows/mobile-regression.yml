@@ -1,0 +1,53 @@
+name: Mobile Actions Regression
+
+on:
+  push:
+    branches: ['fix/**', main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install project and browser test dependencies
+        run: npm install --no-save playwright
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium webkit
+      - name: Build production bundle
+        run: npm run build
+      - name: Reproduce original obstruction and record baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/mobile-actions-performance'
+        env:
+          MASROOFI_BASELINE: '1'
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: |
+          BASELINE_DIR="$RUNNER_TEMP/masroofi-before"
+          mkdir -p "$BASELINE_DIR"
+          git archive 678362d6a10c4b32f2f62d4f5638ccb424c74fe0 | tar -x -C "$BASELINE_DIR"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$BASELINE_DIR/node_modules"
+          (cd "$BASELINE_DIR" && npm run build)
+          MASROOFI_DIST="$BASELINE_DIR/dist" node scripts/mobile-regression.mjs
+      - name: Verify fixed interactions and performance
+        env:
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: node scripts/mobile-regression.mjs
+      - name: Upload synthetic QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-actions-qa
+          path: ${{ runner.temp }}/masroofi-ui-qa
+          if-no-files-found: warn
+          retention-days: 3

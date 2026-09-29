@@ -6,6 +6,7 @@ import './styles/data-tools.css';
 import './styles/polish.css';
 import './styles/data-safety.css';
 import './styles/debts.css';
+import './styles/mobile-actions.css';
 
 if (navigator.storage?.persist) {
   void navigator.storage.persist().catch(() => false);

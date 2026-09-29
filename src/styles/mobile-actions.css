@@ -1,0 +1,31 @@
+/* One geometry contract for fixed controls and the real scrollable clearance. */
+:root {
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-bottom: max(14px, var(--app-safe-bottom));
+  --nav-height: 68px;
+  --fab-size: 52px;
+  --fab-gap: 12px;
+  --content-control-gap: 20px;
+}
+.app-shell {
+  --quick-add-clearance: 0px;
+  padding-bottom: calc(var(--nav-bottom) + var(--nav-height) + var(--quick-add-clearance) + var(--content-control-gap));
+}
+.bottom-nav { bottom: var(--nav-bottom); }
+.icon-button.subtle.transaction-menu-trigger { width: 44px; height: 44px; }
+.row-menu-popover.transaction-actions-popover {
+  position: fixed;
+  z-index: 70;
+  width: 144px;
+  max-width: calc(100vw - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.transaction-actions-popover button { min-height: 44px; }
+
+@media (max-width: 760px) {
+  :root { --nav-bottom: max(9px, var(--app-safe-bottom)); }
+  .app-shell.has-quick-add { --quick-add-clearance: calc(var(--fab-gap) + var(--fab-size)); }
+  .quick-add { bottom: calc(var(--nav-bottom) + var(--nav-height) + var(--fab-gap)); }
+  .quick-add-fab { width: var(--fab-size); height: var(--fab-size); }
+}

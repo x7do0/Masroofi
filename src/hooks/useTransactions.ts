@@ -1,16 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Transaction, TransactionInput } from '../types/transaction';
 import {
-  addTransaction,
-  deleteTransaction,
-  getAllTransactions,
-  mergeTransactions,
-  replaceTransactions,
-  TRANSACTIONS_CHANGED_EVENT,
-  TRANSACTIONS_CHANNEL,
-  updateTransaction,
+  addTransaction, deleteTransaction, getAllTransactions, mergeTransactions,
+  replaceTransactions, TRANSACTIONS_CHANGED_EVENT, TRANSACTIONS_CHANNEL, updateTransaction,
 } from '../services/db';
 import { getDebts, getTotals } from '../services/ledger';
+import { createRefreshQueue } from '../utils/refreshQueue';
 
 export type { MergeResult } from '../services/db';
 
@@ -20,20 +15,21 @@ export function useTransactions() {
   const [error, setError] = useState<string | null>(null);
   const refreshSequence = useRef(0);
 
-  const refresh = useCallback(async () => {
-    const sequence = ++refreshSequence.current;
+  const refresh = useMemo(() => createRefreshQueue(async (isCurrent) => {
+    const sequence = refreshSequence.current;
+    const canPublish = () => sequence === refreshSequence.current && isCurrent();
     try {
       const items = await getAllTransactions();
-      if (sequence !== refreshSequence.current) return;
+      if (!canPublish()) return;
       setTransactions(items);
       setError(null);
     } catch (cause) {
-      if (sequence !== refreshSequence.current) return;
+      if (!canPublish()) return;
       setError(cause instanceof Error ? cause.message : 'تعذر تحميل البيانات.');
     } finally {
-      if (sequence === refreshSequence.current) setLoading(false);
+      if (canPublish()) setLoading(false);
     }
-  }, []);
+  }), []);
 
   useEffect(() => {
     const reload = () => { void refresh(); };
@@ -44,7 +40,7 @@ export function useTransactions() {
         channel = new BroadcastChannel(TRANSACTIONS_CHANNEL);
         channel.onmessage = reload;
       }
-    } catch { /* Focus/visibility events still refresh browsers without an available channel. */ }
+    } catch { /* Focus/visibility events remain a fallback. */ }
     window.addEventListener(TRANSACTIONS_CHANGED_EVENT, reload);
     window.addEventListener('focus', reload);
     document.addEventListener('visibilitychange', onVisibility);
@@ -63,22 +59,18 @@ export function useTransactions() {
     await refresh();
     return item;
   }, [refresh]);
-
   const update = useCallback(async (id: string, input: TransactionInput) => {
     await updateTransaction(id, input);
     await refresh();
   }, [refresh]);
-
   const remove = useCallback(async (id: string) => {
     await deleteTransaction(id);
     await refresh();
   }, [refresh]);
-
   const restore = useCallback(async (items: Transaction[]) => {
     await replaceTransactions(items);
     await refresh();
   }, [refresh]);
-
   const merge = useCallback(async (items: Transaction[]) => {
     const result = await mergeTransactions(items);
     await refresh();
@@ -87,6 +79,5 @@ export function useTransactions() {
 
   const totals = useMemo(() => getTotals(transactions), [transactions]);
   const debts = useMemo(() => getDebts(transactions), [transactions]);
-
   return { transactions, loading, error, totals, debts, add, update, remove, restore, merge, refresh };
 }
