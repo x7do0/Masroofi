@@ -86,7 +86,10 @@ async function bottom(page) {
 async function hit(locator) {
   return locator.evaluate((button) => {
     const r = button.getBoundingClientRect();
-    return [ [r.left + r.width / 2, r.top + r.height / 2], [r.left + 3, r.top + 3], [r.right - 3, r.bottom - 3] ]
+    // Sample inside the rounded button, not the clipped corner of its bounding box.
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    return [[x, y], [r.left + 4, y], [r.right - 4, y], [x, r.top + 4], [x, r.bottom - 4]]
       .every(([x, y]) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight && button.contains(document.elementFromPoint(x, y)));
   });
 }
@@ -105,8 +108,17 @@ async function lastOptions(page) {
   for (let index = Math.max(0, count - 3); index < count; ++index) {
     const button = buttons.nth(index);
     await button.scrollIntoViewIfNeeded();
-    assert.ok(await hit(button), `options ${index} must be genuinely hit-testable`);
-    await button.click();
+    if (!(await hit(button))) {
+      const geometry = await button.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { button: r.toJSON(), hit: document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.outerHTML,
+          controls: [...document.querySelectorAll('.bottom-nav, .quick-add')].map((item) => ({ class: item.className, rect: item.getBoundingClientRect().toJSON() })),
+          padding: getComputedStyle(document.querySelector('.app-shell')).paddingBottom };
+      });
+      report.cases.push({ obstruction: index, geometry });
+      throw new Error(`options ${index} must be genuinely hit-testable: ${JSON.stringify(geometry)}`);
+    }
+    await button.click(); // Never force: interception is the regression.
     assert.ok(await menuClear(page), 'menu must clear FAB/navigation and viewport edges');
     await page.keyboard.press('Escape');
     assert.ok(await button.evaluate((el) => el === document.activeElement));
@@ -201,6 +213,14 @@ try {
   report.passed = true;
 } catch (error) {
   report.failure = error.stack;
+  console.log(`::error::${String(error.message).replaceAll('\n', '%0A')}`);
+  for (const browser of browsers) {
+    for (const [i, context] of browser.contexts().entries()) {
+      for (const [j, page] of context.pages().entries()) {
+        await page.screenshot({ path: join(output, `${label}-failure-${i}-${j}.png`) }).catch(() => {});
+      }
+    }
+  }
   process.exitCode = 1;
 } finally {
   await writeFile(join(output, `${label}-report.json`), JSON.stringify(report, null, 2));
