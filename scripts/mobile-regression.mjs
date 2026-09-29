@@ -94,12 +94,20 @@ async function hit(locator) {
   });
 }
 async function menuClear(page) {
-  return page.locator('.row-menu-popover').evaluate((menu) => {
+  const result = await page.locator('.row-menu-popover').evaluate((menu) => {
     const r = menu.getBoundingClientRect();
+    const trigger = document.querySelector('.transaction-menu-trigger[aria-expanded="true"]');
+    const a = trigger.getBoundingClientRect();
     const blockers = [...document.querySelectorAll('.bottom-nav, .quick-add')].filter((el) => el.getClientRects().length);
-    return r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 &&
+    const clear = r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 1 && r.bottom <= innerHeight + 1 &&
       blockers.every((el) => { const b = el.getBoundingClientRect(); return !(r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top); });
+    const attached = Math.min(Math.abs(r.top - a.bottom), Math.abs(r.bottom - a.top)) <= 16;
+    return { clear, attached, menu: r.toJSON(), trigger: a.toJSON(), inline: menu.getAttribute('style'),
+      visualViewport: { width: visualViewport?.width, height: visualViewport?.height, offsetTop: visualViewport?.offsetTop },
+      scrollY, scrollHeight: document.documentElement.scrollHeight, focused: document.activeElement?.outerHTML };
   });
+  if (!result.clear || !result.attached) report.menuFailure = result;
+  return result.clear && result.attached;
 }
 async function lastOptions(page) {
   await bottom(page);
@@ -118,8 +126,8 @@ async function lastOptions(page) {
       report.cases.push({ obstruction: index, geometry });
       throw new Error(`options ${index} must be genuinely hit-testable: ${JSON.stringify(geometry)}`);
     }
-    await button.click(); // Never force: interception is the regression.
-    assert.ok(await menuClear(page), 'menu must clear FAB/navigation and viewport edges');
+    await button.click();
+    assert.ok(await menuClear(page), 'menu must clear fixed controls and remain attached to its trigger');
     await page.keyboard.press('Escape');
     assert.ok(await button.evaluate((el) => el === document.activeElement));
   }
