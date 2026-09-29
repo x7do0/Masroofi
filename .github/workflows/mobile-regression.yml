@@ -1,0 +1,72 @@
+name: Mobile Actions Regression
+
+on:
+  push:
+    branches: ['fix/**', main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Install project and browser test dependencies
+        run: npm install --no-save playwright
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium webkit
+      - name: Build production bundle
+        run: npm run build
+      - name: Reproduce original obstruction and record baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/fix/mobile-actions-performance'
+        env:
+          MASROOFI_BASELINE: '1'
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: |
+          BASELINE_DIR="$RUNNER_TEMP/masroofi-before"
+          mkdir -p "$BASELINE_DIR"
+          git archive 678362d6a10c4b32f2f62d4f5638ccb424c74fe0 | tar -x -C "$BASELINE_DIR"
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$BASELINE_DIR/node_modules"
+          (cd "$BASELINE_DIR" && npm run build)
+          MASROOFI_DIST="$BASELINE_DIR/dist" node scripts/mobile-regression.mjs
+      - name: Verify fixed interactions and performance
+        env:
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: node scripts/mobile-regression.mjs
+      - name: Verify concurrent tabs and legacy notifications
+        if: success() || failure()
+        env:
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: node scripts/cross-tab-regression.mjs
+      - name: Verify PWA, financial flows and offline persistence on preview
+        if: success() || failure()
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4318 --strictPort > "$RUNNER_TEMP/masroofi-preview.log" 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 100); do
+            curl -fsS http://127.0.0.1:4318/Masroofi/ > /dev/null && break
+            sleep 0.1
+          done
+          mkdir -p "$RUNNER_TEMP/masroofi-ui-qa"
+          cd "$RUNNER_TEMP/masroofi-ui-qa"
+          MASROOFI_URL=http://127.0.0.1:4318/Masroofi/ node "$GITHUB_WORKSPACE/scripts/production-smoke.mjs" > preview-smoke.log 2>&1 || { cat preview-smoke.log; exit 1; }
+          cat preview-smoke.log
+      - name: Upload synthetic QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-actions-qa
+          path: ${{ runner.temp }}/masroofi-ui-qa
+          if-no-files-found: warn
+          retention-days: 3

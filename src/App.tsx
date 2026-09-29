@@ -103,7 +103,6 @@ export default function App() {
         </div>
       );
     }
-
     switch (page) {
       case 'home':
         return <HomePage transactions={transactions} {...totals} onNavigate={navigate} />;
@@ -121,30 +120,19 @@ export default function App() {
   }, [addWithFeedback, loading, navigate, page, removeWithFeedback, totals, transactions, updateWithFeedback]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${page !== 'debts' ? ' has-quick-add' : ''}`}>
       <header className="app-header">
         <div className="brand-mark app-emoji-mark" aria-hidden="true">💸</div>
-        <div className="header-copy">
-          <h1>{meta.title}</h1>
-          <p>{meta.subtitle}</p>
-        </div>
+        <div className="header-copy"><h1>{meta.title}</h1><p>{meta.subtitle}</p></div>
         <div className="header-actions polish-actions">
           <ThemeToggle />
-          <DataTools
-            transactions={transactions}
-            onRestore={restoreWithFeedback}
-            onMerge={mergeWithFeedback}
-            disabled={loading}
-          />
+          <DataTools transactions={transactions} onRestore={restoreWithFeedback} onMerge={mergeWithFeedback} disabled={loading} />
         </div>
       </header>
-
       {error && <div className="global-error" role="alert">{error}</div>}
       <PwaUpdate />
-
       <main className="app-main">{content}</main>
-
-      {page !== 'debts' && <QuickAdd onNavigate={navigate} />}
+      {page !== 'debts' && <QuickAdd key={page} onNavigate={navigate} />}
       <BottomNav page={page} onChange={navigate} />
       <ToastStack items={toasts} />
     </div>

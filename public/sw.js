@@ -2,10 +2,11 @@
 const CACHE_NAME = 'masroofi-shell-__BUILD_HASH__';
 const PRECACHE_PATHS = /* PRECACHE_PATHS */ [];
 const APP_SCOPE = new URL(self.registration.scope);
+const PRECACHE_URLS = new Set(['./', ...PRECACHE_PATHS].map((path) => new URL(path, APP_SCOPE).href));
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(
-    ['./', ...PRECACHE_PATHS].map((path) => new Request(new URL(path, APP_SCOPE).href, { cache: 'reload' })),
+    [...PRECACHE_URLS].map((url) => new Request(url, { cache: 'reload' })),
   )));
 });
 
@@ -27,8 +28,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || url.origin !== APP_SCOPE.origin || !url.pathname.startsWith(APP_SCOPE.pathname)) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    // Keep each shell and its fingerprinted assets on the same release.
-    const cached = await cache.match(request.mode === 'navigate' ? APP_SCOPE.href : request);
+    const key = request.mode === 'navigate' ? APP_SCOPE.href : request.url;
+    // Only allowlisted, versioned public shell files are invariant across Origin
+    // headers. A module request can otherwise miss a precache with Vary: Origin.
+    // Keep strict matching for every non-shell URL; never ignore query strings.
+    const cached = await cache.match(request.mode === 'navigate' ? key : request, {
+      ignoreVary: PRECACHE_URLS.has(key),
+    });
     if (cached) return cached;
     return fetch(request);
   })());
