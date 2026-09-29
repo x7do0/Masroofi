@@ -9,15 +9,24 @@
 }
 .app-shell {
   --quick-add-clearance: 0px;
-  padding-bottom: calc(var(--nav-bottom) + var(--nav-height) + var(--quick-add-clearance) + var(--content-control-gap));
+  --bottom-control-clearance: calc(var(--nav-bottom) + var(--nav-height) + var(--quick-add-clearance) + var(--content-control-gap));
+  padding-bottom: var(--bottom-control-clearance);
 }
 .bottom-nav { bottom: var(--nav-bottom); }
-.icon-button.subtle.transaction-menu-trigger { width: 44px; height: 44px; }
+.icon-button.subtle.transaction-menu-trigger {
+  width: 44px;
+  height: 44px;
+  scroll-margin-block-start: 24px;
+  scroll-margin-block-end: var(--bottom-control-clearance);
+}
 .row-menu-popover.transaction-actions-popover {
   position: fixed;
   z-index: 70;
   width: 144px;
-  max-width: calc(100vw - 16px);
+  left: var(--action-left, 8px);
+  top: var(--action-top, 8px);
+  max-width: var(--action-max-width, calc(100vw - 16px));
+  max-height: var(--action-max-height, 80vh);
   overflow-y: auto;
   overscroll-behavior: contain;
 }

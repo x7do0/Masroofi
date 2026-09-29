@@ -37,16 +37,16 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
       const top = viewport?.offsetTop ?? 0;
       const width = viewport?.width ?? document.documentElement.clientWidth;
       const height = viewport?.height ?? window.innerHeight;
-      menu.style.maxWidth = `${Math.max(0, width - 16)}px`;
+      menu.style.setProperty('--action-max-width', `${Math.max(0, width - 16)}px`);
       const blockers = [...document.querySelectorAll<HTMLElement>('.bottom-nav, .quick-add')]
         .filter((element) => element.getClientRects().length > 0)
         .map((element) => element.getBoundingClientRect());
       const placement = placeFloatingMenu(trigger.getBoundingClientRect(),
         { width: menu.getBoundingClientRect().width, height: menu.scrollHeight + 2 },
         { left, top, right: left + width, bottom: top + height }, blockers);
-      menu.style.left = `${placement.left}px`;
-      menu.style.top = `${placement.top}px`;
-      menu.style.maxHeight = `${placement.maxHeight}px`;
+      menu.style.setProperty('--action-left', `${placement.left}px`);
+      menu.style.setProperty('--action-top', `${placement.top}px`);
+      menu.style.setProperty('--action-max-height', `${placement.maxHeight}px`);
     };
     const contains = (target: EventTarget | null) => target instanceof Node && (trigger.contains(target) || menu.contains(target));
     const outside = (event: Event) => { if (!contains(event.target)) setMenuOpen(false); };
