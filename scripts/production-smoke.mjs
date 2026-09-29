@@ -44,7 +44,6 @@ async function addDebtAndRepayment(page) {
     'Loan amount input did not add thousands separators');
   await loanDialog.getByRole('button', { name: 'إضافة دين', exact: true }).click();
   await loanDialog.waitFor({ state: 'hidden' });
-
   const card = page.getByRole('article', { name: `دين ${debtTitle}`, exact: true });
   await card.getByText('غير مسدد', { exact: true }).waitFor();
   await card.locator('.debt-remaining').getByText('20,000 د.ع', { exact: true }).waitFor();
@@ -69,7 +68,6 @@ async function verifyDebtAndSummary(page) {
   await card.locator('.debt-remaining').getByText('15,000 د.ع', { exact: true }).waitFor();
   await page.getByRole('region', { name: 'إجمالي الديون', exact: true })
     .getByText('15,000 د.ع', { exact: true }).waitFor();
-
   await navigate(page, 'الرئيسية');
   await page.locator('.balance-card').getByText('83,456 د.ع', { exact: true }).waitFor();
   await page.locator('.summary-card.income-card').getByText('123,456 د.ع', { exact: true }).waitFor();
@@ -130,12 +128,8 @@ async function verifyPwa(page) {
       navigator.serviceWorker?.ready,
       new Promise((resolve) => window.setTimeout(() => resolve(null), 10_000)),
     ]);
-    return {
-      manifest,
-      serviceWorkerActive: Boolean(registration?.active),
-    };
+    return { manifest, serviceWorkerActive: Boolean(registration?.active) };
   });
-
   assert(!pwa.error, pwa.error ?? 'Unknown PWA error');
   assert(pwa.manifest?.name === 'مصروفي', 'Manifest app name is incorrect');
   assert(pwa.manifest?.display === 'standalone', 'Manifest display mode is not standalone');
@@ -145,23 +139,30 @@ async function verifyPwa(page) {
 }
 
 async function verifyTransactionMenuLayer(page) {
-  const firstRow = page.locator('.transaction-row').first();
-  await firstRow.getByRole('button', { name: 'خيارات العملية' }).click();
-  const popover = firstRow.locator('.row-menu-popover');
-  await popover.waitFor();
-
-  const layerCheck = await popover.evaluate((menu) => {
-    const row = menu.closest('.transaction-row');
-    const rect = menu.getBoundingClientRect();
-    const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.bottom - 8);
-    return {
-      rowZIndex: row ? Number.parseInt(getComputedStyle(row).zIndex || '0', 10) : 0,
-      menuOwnsTopElement: Boolean(topElement && menu.contains(topElement)),
-    };
-  });
-
-  assert(layerCheck.rowZIndex >= 30, 'Open transaction row was not raised above sibling stacking contexts');
-  assert(layerCheck.menuOwnsTopElement, 'Transaction menu is visually covered by another row');
+  const rows = page.locator('.transaction-row');
+  for (const index of [0, (await rows.count()) - 1]) {
+    const trigger = rows.nth(index).getByRole('button', { name: 'خيارات العملية' });
+    if (index > 0) {
+      await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    }
+    await trigger.click();
+    // The menu is portaled to the body, not confined by a row's stacking context.
+    const popover = page.getByRole('menu', { name: 'إجراءات العملية' });
+    await popover.waitFor();
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    const layerCheck = await popover.evaluate((menu) => {
+      const rect = menu.getBoundingClientRect();
+      const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.bottom - 8);
+      return {
+        withinViewport: rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth + 1 && rect.bottom <= innerHeight + 1,
+        menuOwnsTopElement: Boolean(topElement && menu.contains(topElement)),
+      };
+    });
+    assert(layerCheck.withinViewport, 'Transaction menu escaped the visible viewport');
+    assert(layerCheck.menuOwnsTopElement, 'Transaction menu is visually covered');
+    await page.keyboard.press('Escape');
+    await popover.waitFor({ state: 'hidden' });
+  }
 }
 
 async function verifyBackupExperience(page) {
@@ -172,11 +173,9 @@ async function verifyBackupExperience(page) {
   assert(!/JSON/i.test(dialogText), 'Backup UI exposes JSON terminology to the user');
   assert(dialogText.includes('حفظ نسخة احتياطية'), 'Friendly backup action label is missing');
   assert(dialogText.includes('استرجاع نسخة احتياطية'), 'Friendly restore action label is missing');
-
   const fileInput = dialog.locator('input[type="file"]');
   const accept = await fileInput.getAttribute('accept');
   assert(accept?.includes('.masroofi') && accept.includes('.json'), 'Backup picker must accept new and legacy backup files');
-
   const downloadPromise = page.waitForEvent('download');
   await dialog.getByRole('button', { name: /حفظ نسخة احتياطية/ }).click();
   const download = await downloadPromise;
@@ -185,66 +184,53 @@ async function verifyBackupExperience(page) {
 }
 
 const browser = await chromium.launch({ headless: true });
-const context = await browser.newContext({
-  locale: 'ar-IQ',
-  timezoneId: 'Asia/Baghdad',
-  viewport: { width: 390, height: 844 },
-});
-
+// All records below belong to this fresh disposable profile, never the user's browser.
+const context = await browser.newContext({ locale: 'ar-IQ', timezoneId: 'Asia/Baghdad', viewport: { width: 390, height: 844 } });
+// Do not send synthetic QA visits to production analytics; also avoid a third-party
+// network error obscuring the offline app-shell regression below.
+await context.route('https://gc.zgo.at/count.js', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
 let page = await context.newPage();
 const runtimeErrors = [];
 page.on('pageerror', (error) => runtimeErrors.push(`pageerror: ${error.message}`));
-page.on('console', (message) => {
-  if (message.type() === 'error') runtimeErrors.push(`console: ${message.text()}`);
-});
+page.on('console', (message) => { if (message.type() === 'error') runtimeErrors.push(`console: ${message.text()}`); });
 
 try {
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60_000 });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor({ timeout: 20_000 });
   await verifyPwa(page);
-  // This browser context starts with no worker or caches. Wait for the first
-  // worker to claim the page and React to paint before checking the update UI.
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller), undefined, { timeout: 10_000 });
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   assert(await page.getByRole('button', { name: 'تحديث التطبيق', exact: true }).count() === 0,
     'A clean first installation incorrectly displayed an available-update banner');
-
   const themeButton = page.getByRole('button', { name: /المظهر الحالي:/ });
   await themeButton.waitFor();
   await themeButton.click();
   const savedTheme = await page.evaluate(() => localStorage.getItem('masroofi-theme'));
   assert(savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system', 'Theme preference was not persisted');
-
   await deleteDatabase(page);
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor();
-
   await navigate(page, 'الدخل');
   await page.locator('#income-title').fill(testTitle);
   await page.locator('#income-amount').fill(String(amount));
   assert(await page.locator('#income-amount').inputValue() === '123,456', 'Amount input did not add thousands separators while typing');
-
   const dateTriggerText = await page.locator('.date-trigger').innerText();
   assert(!arabicDigitPattern.test(dateTriggerText), 'Date trigger still contains Arabic-Indic digits');
   assert(englishMonthPattern.test(dateTriggerText), 'Date trigger does not use an English month name');
   assert(amPmPattern.test(dateTriggerText), 'Date trigger does not use AM/PM');
-
   await page.locator('#income-note').fill('Smoke test على GitHub Pages الحقيقي');
   await page.getByRole('button', { name: 'إضافة رصيد', exact: true }).click();
   await page.getByText('💰 تمت إضافة الرصيد', { exact: true }).waitFor({ timeout: 10_000 });
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
-
   await navigate(page, 'المصروفات');
   await page.locator('#expense-title').fill(expenseTitle);
   await page.locator('#expense-amount').fill(String(expenseAmount));
   assert(await page.locator('#expense-amount').inputValue() === '25,000', 'Expense amount input did not add thousands separators');
   await page.getByRole('button', { name: 'إضافة مصروف', exact: true }).click();
   await page.getByText(expenseTitle, { exact: true }).waitFor({ timeout: 10_000 });
-
   await addDebtAndRepayment(page);
   await verifyDebtAndSummary(page);
   await verifyDebtHistory(page);
-
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
   const historyText = await page.locator('.history-page').innerText();
   assert(!arabicDigitPattern.test(historyText), 'History still contains Arabic-Indic digits');
@@ -252,41 +238,43 @@ try {
   assert(amPmPattern.test(historyText), 'History does not use AM/PM');
   await verifyTransactionMenuLayer(page);
   await verifyBackupExperience(page);
-
   const beforeReload = await readTransactions(page);
-  const savedBeforeReload = beforeReload.find((item) => item.title === testTitle && item.amount === amount && item.type === 'income');
-  assert(savedBeforeReload, 'Transaction was not written to real IndexedDB before reload');
+  assert(beforeReload.some((item) => item.title === testTitle && item.amount === amount && item.type === 'income'),
+    'Transaction was not written to real IndexedDB before reload');
   verifyStoredDebt(beforeReload, 'Before reload');
-
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor();
   await navigate(page, 'الدخل');
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
   await page.getByText('123,456 د.ع', { exact: false }).first().waitFor({ timeout: 10_000 });
-
   const afterReload = await readTransactions(page);
-  const persistedAfterReload = afterReload.find((item) => item.title === testTitle && item.amount === amount && item.type === 'income');
-  assert(persistedAfterReload, 'Transaction did not persist in IndexedDB after reload');
+  assert(afterReload.some((item) => item.title === testTitle && item.amount === amount && item.type === 'income'),
+    'Transaction did not persist in IndexedDB after reload');
   verifyStoredDebt(afterReload, 'After reload');
   await verifyDebtAndSummary(page);
   await verifyDebtHistory(page);
-
   await page.close();
   page = await context.newPage();
   page.on('pageerror', (error) => runtimeErrors.push(`pageerror-after-reopen: ${error.message}`));
-  page.on('console', (message) => {
-    if (message.type() === 'error') runtimeErrors.push(`console-after-reopen: ${message.text()}`);
-  });
+  page.on('console', (message) => { if (message.type() === 'error') runtimeErrors.push(`console-after-reopen: ${message.text()}`); });
   await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 60_000 });
   await navigate(page, 'الدخل');
   await page.getByText(testTitle, { exact: true }).waitFor({ timeout: 10_000 });
-
   const afterReopen = await readTransactions(page);
   assert(afterReopen.some((item) => item.title === testTitle && item.amount === amount), 'Transaction did not persist after closing and reopening the page');
   verifyStoredDebt(afterReopen, 'After reopening');
   await verifyDebtAndSummary(page);
   await verifyDebtHistory(page);
 
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor();
+  await navigate(page, 'الدخل');
+  await page.getByText(testTitle, { exact: true }).waitFor();
+  verifyStoredDebt(await readTransactions(page), 'Offline reload');
+  await verifyDebtAndSummary(page);
+  await verifyDebtHistory(page);
+  await context.setOffline(false);
   await page.screenshot({ path: 'production-smoke.png', fullPage: true });
 
   assert(runtimeErrors.length === 0, `Runtime errors detected:\n${runtimeErrors.join('\n')}`);
@@ -296,11 +284,12 @@ try {
   console.log('PASS: amount inputs format thousands separators while typing');
   console.log('PASS: dates are ordered with Latin digits, English months and AM/PM');
   console.log('PASS: backup UI uses friendly language and .masroofi files while keeping legacy restore support');
-  console.log('PASS: transaction action menu stays above sibling rows');
+  console.log('PASS: first and last transaction action menus stay visible above other content');
   console.log(`PASS: real IndexedDB persisted transaction across reload and page reopen: ${testTitle}`);
   console.log('PASS: loan 20,000 and repayment 5,000 preserve income 123,456 and expenses 25,000');
-  console.log('PASS: cash balance 83,456, remaining debt 15,000 and distinct debt history persist after reload and reopening');
+  console.log('PASS: cash balance 83,456 and remaining debt 15,000 persist across reopening and an offline reload');
 } finally {
+  await context.setOffline(false);
   try {
     if (!page.isClosed()) await deleteDatabase(page);
   } catch (error) {
