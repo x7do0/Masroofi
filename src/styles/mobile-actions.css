@@ -23,10 +23,7 @@
   position: fixed;
   z-index: 70;
   width: 144px;
-  left: var(--action-left, 8px);
-  top: var(--action-top, 8px);
-  max-width: var(--action-max-width, calc(100vw - 16px));
-  max-height: var(--action-max-height, 80vh);
+  max-width: calc(100vw - 16px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }

@@ -13,11 +13,12 @@ interface TransactionRowProps {
   compact?: boolean;
   displayTitle?: string;
 }
-
+interface MenuPlacement { left: number; top: number; maxHeight: number; maxWidth: number }
 const typeLabels = { income: 'دخل', expense: 'مصروف', debt_given: 'إعطاء دين', debt_repayment: 'تسديد دين' };
 
 export const TransactionRow = memo(function TransactionRow({ transaction, onEdit, onDelete, compact = false, displayTitle }: TransactionRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [placement, setPlacement] = useState<MenuPlacement | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -37,16 +38,17 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
       const top = viewport?.offsetTop ?? 0;
       const width = viewport?.width ?? document.documentElement.clientWidth;
       const height = viewport?.height ?? window.innerHeight;
-      menu.style.setProperty('--action-max-width', `${Math.max(0, width - 16)}px`);
       const blockers = [...document.querySelectorAll<HTMLElement>('.bottom-nav, .quick-add')]
         .filter((element) => element.getClientRects().length > 0)
         .map((element) => element.getBoundingClientRect());
-      const placement = placeFloatingMenu(trigger.getBoundingClientRect(),
-        { width: menu.getBoundingClientRect().width, height: menu.scrollHeight + 2 },
-        { left, top, right: left + width, bottom: top + height }, blockers);
-      menu.style.setProperty('--action-left', `${placement.left}px`);
-      menu.style.setProperty('--action-top', `${placement.top}px`);
-      menu.style.setProperty('--action-max-height', `${placement.maxHeight}px`);
+      const next = {
+        ...placeFloatingMenu(trigger.getBoundingClientRect(),
+          { width: Math.min(144, width - 16), height: menu.scrollHeight + 2 },
+          { left, top, right: left + width, bottom: top + height }, blockers),
+        maxWidth: Math.max(0, width - 16),
+      };
+      setPlacement((current) => current && current.left === next.left && current.top === next.top
+        && current.maxHeight === next.maxHeight && current.maxWidth === next.maxWidth ? current : next);
     };
     const contains = (target: EventTarget | null) => target instanceof Node && (trigger.contains(target) || menu.contains(target));
     const outside = (event: Event) => { if (!contains(event.target)) setMenuOpen(false); };
@@ -69,8 +71,10 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
       buttons[next]?.focus();
     };
     position();
-    menu.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
-    const frame = requestAnimationFrame(position);
+    const frame = requestAnimationFrame(() => {
+      position();
+      menu.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
+    });
     window.addEventListener('resize', position);
     window.addEventListener('scroll', position, true);
     viewport?.addEventListener('resize', position);
@@ -120,7 +124,8 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
               <MoreVertical size={18} />
             </button>
             {menuOpen && createPortal(
-              <div ref={menuRef} id={menuId} className="row-menu-popover transaction-actions-popover" role="menu" aria-label="إجراءات العملية" dir="rtl">
+              <div ref={menuRef} id={menuId} className="row-menu-popover transaction-actions-popover" role="menu" aria-label="إجراءات العملية" dir="rtl"
+                style={placement ?? { visibility: 'hidden' }}>
                 {onEdit && <button type="button" role="menuitem" tabIndex={-1} onClick={() => act(onEdit)}><Pencil size={16} /> تعديل</button>}
                 {onDelete && <button type="button" role="menuitem" tabIndex={-1} className="danger" onClick={() => act(onDelete)}><Trash2 size={16} /> حذف</button>}
               </div>, document.body,
