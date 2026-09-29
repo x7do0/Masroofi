@@ -76,6 +76,7 @@ async function prepare(context, count) {
 async function history(page, count) {
   const start = performance.now();
   await page.locator('.bottom-nav').getByRole('button', { name: 'السجل', exact: true }).click();
+  await page.locator('.history-page').waitFor();
   await page.waitForFunction((n) => document.querySelectorAll('.history-page .transaction-row').length === n, count, { timeout: 120000 });
   return performance.now() - start;
 }
@@ -86,14 +87,15 @@ async function bottom(page) {
 async function hit(locator) {
   return locator.evaluate((button) => {
     const r = button.getBoundingClientRect();
-    // Sample inside the rounded button, not the clipped corner of its bounding box.
     const x = r.left + r.width / 2;
     const y = r.top + r.height / 2;
+    // Samples stay inside the rounded button rather than its clipped corners.
     return [[x, y], [r.left + 4, y], [r.right - 4, y], [x, r.top + 4], [x, r.bottom - 4]]
       .every(([x, y]) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight && button.contains(document.elementFromPoint(x, y)));
   });
 }
 async function menuClear(page) {
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
   const result = await page.locator('.row-menu-popover').evaluate((menu) => {
     const r = menu.getBoundingClientRect();
     const trigger = document.querySelector('.transaction-menu-trigger[aria-expanded="true"]');
@@ -103,6 +105,7 @@ async function menuClear(page) {
       blockers.every((el) => { const b = el.getBoundingClientRect(); return !(r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top); });
     const attached = Math.min(Math.abs(r.top - a.bottom), Math.abs(r.bottom - a.top)) <= 16;
     return { clear, attached, menu: r.toJSON(), trigger: a.toJSON(), inline: menu.getAttribute('style'),
+      computed: { top: getComputedStyle(menu).top, left: getComputedStyle(menu).left, transform: getComputedStyle(menu).transform },
       visualViewport: { width: visualViewport?.width, height: visualViewport?.height, offsetTop: visualViewport?.offsetTop },
       scrollY, scrollHeight: document.documentElement.scrollHeight, focused: document.activeElement?.outerHTML };
   });
@@ -116,12 +119,13 @@ async function lastOptions(page) {
   for (let index = Math.max(0, count - 3); index < count; ++index) {
     const button = buttons.nth(index);
     await button.scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     if (!(await hit(button))) {
       const geometry = await button.evaluate((el) => {
         const r = el.getBoundingClientRect();
         return { button: r.toJSON(), hit: document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.outerHTML,
           controls: [...document.querySelectorAll('.bottom-nav, .quick-add')].map((item) => ({ class: item.className, rect: item.getBoundingClientRect().toJSON() })),
-          padding: getComputedStyle(document.querySelector('.app-shell')).paddingBottom };
+          padding: getComputedStyle(document.querySelector('.app-shell')).paddingBottom, scrollY, scrollHeight: document.documentElement.scrollHeight };
       });
       report.cases.push({ obstruction: index, geometry });
       throw new Error(`options ${index} must be genuinely hit-testable: ${JSON.stringify(geometry)}`);
@@ -153,6 +157,7 @@ try {
       await bottom(page);
       const last = page.getByRole('button', { name: 'خيارات العملية' }).last();
       await last.click();
+      assert.ok(await menuClear(page));
       await page.screenshot({ path: join(output, `after-${width}.png`) });
       const balance = await page.locator('.history-balance strong').innerText();
       await page.getByRole('menuitem', { name: 'تعديل', exact: true }).click();
