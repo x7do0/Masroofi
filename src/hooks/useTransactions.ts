@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Transaction, TransactionInput } from '../types/transaction';
 import {
   addTransaction, deleteTransaction, getAllTransactions, mergeTransactions,
-  replaceTransactions, TRANSACTIONS_CHANGED_EVENT, TRANSACTIONS_CHANNEL, updateTransaction,
+  replaceTransactions, TRANSACTIONS_CHANGED_EVENT, TRANSACTIONS_CHANNEL, TRANSACTIONS_SOURCE, updateTransaction,
 } from '../services/db';
 import { getDebts, getTotals } from '../services/ledger';
 import { createRefreshQueue } from '../utils/refreshQueue';
@@ -38,7 +38,12 @@ export function useTransactions() {
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         channel = new BroadcastChannel(TRANSACTIONS_CHANNEL);
-        channel.onmessage = reload;
+        channel.onmessage = (event: MessageEvent<unknown>) => {
+          const data = event.data;
+          if (data && typeof data === 'object' && 'source' in data && data.source === TRANSACTIONS_SOURCE) return;
+          // Legacy tabs send a string. They and other current tabs still invalidate.
+          reload();
+        };
       }
     } catch { /* Focus/visibility events remain a fallback. */ }
     window.addEventListener(TRANSACTIONS_CHANGED_EVENT, reload);

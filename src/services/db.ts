@@ -7,6 +7,9 @@ const DB_VERSION = 2;
 const STORE_NAME = 'transactions';
 export const TRANSACTIONS_CHANGED_EVENT = 'masroofi-transactions-changed';
 export const TRANSACTIONS_CHANNEL = 'masroofi-transactions';
+// A separate sender channel also reaches this page's listener. Identify only our
+// own echo; never suppress a different tab's concurrent invalidation.
+export const TRANSACTIONS_SOURCE = crypto.randomUUID();
 
 export type StoredTransaction = Transaction;
 export interface MergeResult { added: number; updated: number; total: number }
@@ -63,7 +66,7 @@ function announceChange(): void {
     if (typeof window !== 'undefined') window.dispatchEvent(new Event(TRANSACTIONS_CHANGED_EVENT));
     if (typeof BroadcastChannel !== 'undefined') {
       const channel = new BroadcastChannel(TRANSACTIONS_CHANNEL);
-      channel.postMessage('changed');
+      channel.postMessage({ type: 'changed', source: TRANSACTIONS_SOURCE });
       channel.close();
     }
   } catch { /* Focus/visibility refresh is the fallback when broadcasting is unavailable. */ }

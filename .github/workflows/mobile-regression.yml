@@ -43,6 +43,10 @@ jobs:
         env:
           MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
         run: node scripts/mobile-regression.mjs
+      - name: Verify concurrent tabs and legacy notifications
+        env:
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: node scripts/cross-tab-regression.mjs
       - name: Upload synthetic QA evidence
         if: always()
         uses: actions/upload-artifact@v4
