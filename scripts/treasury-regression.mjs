@@ -28,6 +28,8 @@ async function readableNavigation(page) {
     for (const button of nav.querySelectorAll('button')) {
       const box = button.getBoundingClientRect();
       if (box.width < 24 || box.height < 44 || button.scrollWidth > button.clientWidth + 1) problems.push(button.textContent);
+      const label = button.querySelector('span');
+      if (label.getBoundingClientRect().height > parseFloat(getComputedStyle(label).lineHeight) * 1.2) problems.push(`Wrapped label: ${label.textContent}`);
     }
     if (document.documentElement.scrollWidth > innerWidth + 1) problems.push('Horizontal overflow');
     return problems;
@@ -99,6 +101,7 @@ try {
       for (const width of [320, 390, 768, 1366, 1920]) {
         await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
         await readableNavigation(page);
+        await page.mouse.move(0, 0);
         await page.screenshot({ path: join(output, `${name}-treasury-${width}.png`), fullPage: true, animations: 'disabled' });
       }
       await page.reload(); await ready(page); await nav(page, 'الخزينة');
