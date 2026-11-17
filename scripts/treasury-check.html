@@ -10,7 +10,7 @@
   async function run(check) {
     result.textContent = 'Running';
     try { result.textContent = 'PASS\n' + JSON.stringify(await check(), null, 2); }
-    catch (error) { result.textContent = 'FAIL\n' + error.stack; }
+    catch (error) { result.textContent = 'FAIL\n' + error.message + '\n' + error.stack; }
   }
   document.querySelector('#run').onclick = () => run(runTreasuryPersistenceChecks);
   document.querySelector('#reload').onclick = () => run(verifyTreasuryAfterReload);

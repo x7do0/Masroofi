@@ -51,11 +51,15 @@ async function seed(version: number) {
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const db = request.result;
-      const store = db.transaction('transactions').objectStore('transactions');
+      const tx = db.transaction('transactions');
+      const store = tx.objectStore('transactions');
       const valid = db.version === 3 && db.objectStoreNames.length === 1 && store.keyPath === 'id'
         && store.indexNames.contains('type') && store.indexNames.contains('occurredAt');
-      db.close();
-      if (valid) resolve(); else reject(new Error('Upgrade changed store layout'));
+      tx.oncomplete = () => {
+        db.close();
+        if (valid) resolve(); else reject(new Error('Upgrade changed store layout'));
+      };
+      tx.onabort = () => { db.close(); reject(tx.error); };
     };
   });
 }
