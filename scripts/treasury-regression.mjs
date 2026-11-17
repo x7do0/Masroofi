@@ -95,10 +95,11 @@ try {
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
       assert.equal(await page.evaluate(() => document.activeElement?.closest('.treasury-actions') !== null), true);
+      await page.locator('.toast').last().waitFor({ state: 'hidden' });
       for (const width of [320, 390, 768, 1366, 1920]) {
         await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
         await readableNavigation(page);
-        await page.screenshot({ path: join(output, `${name}-treasury-${width}.png`), fullPage: true });
+        await page.screenshot({ path: join(output, `${name}-treasury-${width}.png`), fullPage: true, animations: 'disabled' });
       }
       await page.reload(); await ready(page); await nav(page, 'الخزينة');
       assert.match(await page.locator('.treasury-balance').innerText(), /360,000/);

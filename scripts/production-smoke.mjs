@@ -300,7 +300,7 @@ try {
   assert((await page.locator('.treasury-balance').innerText()).includes('12,000'), 'Treasury failed to survive offline reload');
   assert(JSON.stringify(await readTransactions(page)) === JSON.stringify(withTreasury), 'Offline reload changed ledger records');
   await context.setOffline(false);
-  await page.screenshot({ path: 'production-smoke.png', fullPage: true });
+  await page.screenshot({ path: 'production-smoke.png', fullPage: true, animations: 'disabled' });
 
   assert(runtimeErrors.length === 0, `Runtime errors detected:\n${runtimeErrors.join('\n')}`);
   console.log(`PASS: production URL loaded: ${baseUrl}`);
