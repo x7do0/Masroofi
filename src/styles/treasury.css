@@ -24,7 +24,7 @@
   .treasury-action { min-height: 82px; padding: 16px; }
   .treasury-balance { padding: 22px 18px; gap: 14px; }
   .treasury-mark { width: 52px; height: 52px; border-radius: 16px; }
-  .bottom-nav { padding-inline: 4px; grid-template-columns: 1fr 1.6fr .8fr .8fr .8fr 1fr; }
+  .bottom-nav { padding-inline: 4px; grid-template-columns: repeat(6, auto); }
 }
 @media (max-width: 360px) {
   .bottom-nav { width: calc(100% - 10px); }

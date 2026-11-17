@@ -29,7 +29,7 @@ async function readableNavigation(page) {
       const box = button.getBoundingClientRect();
       if (box.width < 24 || box.height < 44 || button.scrollWidth > button.clientWidth + 1) problems.push(button.textContent);
       const label = button.querySelector('span');
-      if (label.getBoundingClientRect().height > parseFloat(getComputedStyle(label).lineHeight) * 1.2) problems.push(`Wrapped label: ${label.textContent}`);
+      if (label.getBoundingClientRect().height > parseFloat(getComputedStyle(label).lineHeight) * 1.2) problems.push(`Wrapped label at ${innerWidth}px: ${label.textContent} (${box.width}px column)`);
     }
     if (document.documentElement.scrollWidth > innerWidth + 1) problems.push('Horizontal overflow');
     return problems;
