@@ -1,38 +1,39 @@
-import { Laptop, Moon, Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-type ThemeMode = 'system' | 'light' | 'dark';
-
-const order: ThemeMode[] = ['system', 'light', 'dark'];
-
-function applyTheme(mode: ThemeMode) {
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const resolved = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode;
-  document.documentElement.dataset.theme = resolved;
-  document.documentElement.dataset.themeMode = mode;
-}
+import { applyTheme, readThemePreference, resolveTheme, THEME_KEY, type Theme } from '../utils/theme';
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('masroofi-theme');
-    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
-  });
+  const [preference, setPreference] = useState<Theme | null>(readThemePreference);
+  const [prefersDark, setPrefersDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const theme = resolveTheme(preference, prefersDark);
 
   useEffect(() => {
-    applyTheme(mode);
-    localStorage.setItem('masroofi-theme', mode);
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => mode === 'system' && applyTheme('system');
+    const onChange = () => setPrefersDark(media.matches);
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === THEME_KEY || event.key === null) setPreference(readThemePreference());
+    };
     media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [mode]);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      media.removeEventListener('change', onChange);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
-  const next = () => setMode(order[(order.indexOf(mode) + 1) % order.length]);
-  const Icon = mode === 'dark' ? Moon : mode === 'light' ? Sun : Laptop;
-  const label = mode === 'dark' ? 'داكن' : mode === 'light' ? 'فاتح' : 'النظام';
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
+  const next = () => {
+    const value = theme === 'dark' ? 'light' : 'dark';
+    setPreference(value);
+    try { localStorage.setItem(THEME_KEY, value); } catch { /* The current session still switches. */ }
+  };
+  const Icon = theme === 'dark' ? Moon : Sun;
+  const label = theme === 'dark' ? 'داكن' : 'فاتح';
+  const nextLabel = theme === 'dark' ? 'فاتح' : 'داكن';
 
   return (
-    <button type="button" className="theme-toggle" onClick={next} aria-label={`المظهر الحالي: ${label}. اضغط للتغيير`} title={`المظهر: ${label}`}>
+    <button type="button" className="theme-toggle" onClick={next} aria-label={`المظهر الحالي: ${label}. التبديل إلى ${nextLabel}`} title={`التبديل إلى ${nextLabel}`}>
       <Icon size={18} />
       <span>{label}</span>
     </button>

@@ -1,12 +1,12 @@
-import type { BackupPayload, BackupPayloadV2 } from '../types/backup';
+import type { BackupPayload, BackupPayloadV3 } from '../types/backup';
 import type { Transaction } from '../types/transaction';
-import { isValidDate, validateTransactions } from '../services/ledger';
+import { isTreasuryType, isValidDate, validateTransactions } from '../services/ledger';
 
-export function createBackup(transactions: Transaction[]): BackupPayloadV2 {
+export function createBackup(transactions: Transaction[]): BackupPayloadV3 {
   validateTransactions(transactions);
   return {
     format: 'masroofi-backup',
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     transactions,
   };
@@ -17,12 +17,15 @@ export function validateBackup(value: unknown): BackupPayload {
   const payload = value as Record<string, unknown>;
   if (
     payload.format !== 'masroofi-backup'
-    || (payload.version !== 1 && payload.version !== 2)
+    || (payload.version !== 1 && payload.version !== 2 && payload.version !== 3)
     || !isValidDate(payload.exportedAt)
   ) {
     throw new Error('صيغة النسخة الاحتياطية غير مدعومة أو ناقصة.');
   }
   validateTransactions(payload.transactions);
+  if (payload.version < 3 && payload.transactions.some((item) => isTreasuryType(item.type))) {
+    throw new Error('عمليات الخزينة تحتاج الإصدار الثالث من النسخة الاحتياطية.');
+  }
   if (payload.version === 1 && payload.transactions.some((item) => item.type !== 'income' && item.type !== 'expense')) {
     throw new Error('الإصدار الأول من النسخة الاحتياطية يدعم الدخل والمصاريف فقط.');
   }

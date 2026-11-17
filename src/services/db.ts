@@ -1,9 +1,9 @@
 import type { Transaction, TransactionInput } from '../types/transaction';
-import { assertSameTransactionIdentity, sortTransactions, validateTransactions } from './ledger';
+import { assertDepositAvailable, assertSameTransactionIdentity, sortTransactions, validateTransactions } from './ledger';
 
 const DB_NAME = 'masroofi-db';
-// No store rewrite: the version bump fences old v1 writers that cannot preserve debt links.
-const DB_VERSION = 2;
+// Preserve every record and index; fence older writers that do not understand treasury entries.
+const DB_VERSION = 3;
 const STORE_NAME = 'transactions';
 export const TRANSACTIONS_CHANGED_EVENT = 'masroofi-transactions-changed';
 export const TRANSACTIONS_CHANNEL = 'masroofi-transactions';
@@ -38,7 +38,9 @@ function openDatabase(): Promise<IDBDatabase> {
       abandoned = true;
       reject(new Error('أغلق نوافذ مصروفي القديمة ثم أعد فتح التطبيق لإكمال تحديث التخزين بأمان.'));
     };
-    request.onerror = () => reject(request.error ?? new Error('تعذر فتح قاعدة البيانات المحلية.'));
+    request.onerror = () => reject(request.error?.name === 'VersionError'
+      ? new Error('توجد نسخة أحدث من مصروفي. حدّث التطبيق ثم أعد المحاولة؛ بياناتك محفوظة.')
+      : request.error ?? new Error('تعذر فتح قاعدة البيانات المحلية.'));
   });
 }
 
@@ -89,6 +91,7 @@ async function mutateTransactions<T>(mutate: (current: Transaction[]) => Mutatio
       request.onsuccess = () => {
         try {
           const current = request.result as Transaction[];
+          validateTransactions(current);
           const next = mutate(current);
           validateTransactions(next.transactions);
           const currentById = new Map(current.map((item) => [item.id, item]));
@@ -128,6 +131,7 @@ export async function addTransaction(input: TransactionInput): Promise<Transacti
   return mutateTransactions((current) => {
     const now = new Date().toISOString();
     const item = createTransaction(snapshot, crypto.randomUUID(), now, now);
+    assertDepositAvailable(current, item);
     return { transactions: [...current, item], result: item };
   });
 }
@@ -141,6 +145,7 @@ export async function updateTransaction(id: string, input: TransactionInput): Pr
     const updatedAt = new Date(Math.max(Date.now(), new Date(existing.updatedAt).getTime() + 1)).toISOString();
     const item = createTransaction(snapshot, id, existing.createdAt, updatedAt);
     assertSameTransactionIdentity(existing, item);
+    assertDepositAvailable(current, item, existing);
     return { transactions: current.map((candidate) => candidate.id === id ? item : candidate), result: undefined };
   });
 }
@@ -151,6 +156,7 @@ export async function putTransaction(transaction: StoredTransaction): Promise<vo
   return mutateTransactions((current) => {
     const existing = current.find((item) => item.id === snapshot.id);
     if (existing) assertSameTransactionIdentity(existing, snapshot);
+    assertDepositAvailable(current, snapshot, existing);
     return {
       transactions: existing ? current.map((item) => item.id === snapshot.id ? snapshot : item) : [...current, snapshot],
       result: undefined,

@@ -14,11 +14,11 @@ test('legacy V1 backups load unchanged with all income/expense metadata', () => 
   assert.equal(ledger.getTotals(restored.transactions).balance, 900_000);
 });
 
-test('V2 backup JSON round trip preserves debt references, partial repayment state, and totals', () => {
+test('V3 backup JSON round trip preserves debt references, partial repayment state, and totals', () => {
   const records = [transaction(), loan({ note: 'أقساط', emoji: '🤝' }), repayment()];
   const exported = createBackup(records);
   assert.equal(exported.format, 'masroofi-backup');
-  assert.equal(exported.version, 2);
+  assert.equal(exported.version, 3);
   assert.ok(Number.isFinite(Date.parse(exported.exportedAt)));
   const restored = validateBackup(JSON.parse(JSON.stringify(exported)));
   assert.deepEqual(restored.transactions, records);
@@ -44,15 +44,16 @@ test('backup restore rejects unsupported formats, malformed containers, and inva
   for (const value of [
     null, [], 'invalid', {},
     payload([], { format: 'another-app' }),
-    payload([], { version: 0 }), payload([], { version: 3 }),
+    payload([], { version: 0 }), payload([], { version: 4 }),
     payload([], { version: '2' }),
     payload([], { exportedAt: '' }), payload([], { exportedAt: 'invalid' }),
     payload(null), payload({}),
   ]) assert.throws(() => validateBackup(value));
 });
 
-test('empty backups are supported by both known versions', () => {
+test('empty backups are supported by all known versions', () => {
   assert.deepEqual(validateBackup(payload([], { version: 1 })).transactions, []);
+  assert.deepEqual(validateBackup(payload([], { version: 3 })).transactions, []);
   assert.deepEqual(validateBackup({ format: 'masroofi-backup', version: 2, exportedAt: date, transactions: [] }).transactions, []);
 });
 

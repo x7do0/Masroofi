@@ -10,10 +10,10 @@ import { EmptyState } from '../components/EmptyState';
 import { emptyStates } from '../content/emptyStates';
 import { DebtForm } from '../components/DebtForm';
 import { Modal } from '../components/Modal';
-import { getDebts } from '../services/ledger';
+import { getDebts, isTreasuryType, isExpense } from '../services/ledger';
 import { createTransactionTitleLookup } from '../utils/transactionTitles';
 
-type HistoryFilter = 'all' | TransactionType;
+type HistoryFilter = 'all' | 'treasury' | TransactionType;
 interface HistoryPageProps {
   transactions: Transaction[];
   balance: number;
@@ -29,7 +29,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
   const displayTitle = useMemo(() => createTransactionTitleLookup(transactions), [transactions]);
   const editedDebt = editing && debts.find((debt) => debt.transaction.id === (editing.type === 'debt_repayment' ? editing.debtId : editing.id));
   const visible = useMemo(
-    () => filter === 'all' ? transactions : transactions.filter((item) => item.type === filter),
+    () => filter === 'all' ? transactions : transactions.filter((item) => filter === 'treasury' ? isTreasuryType(item.type) : filter === 'expense' ? isExpense(item.type) : item.type === filter),
     [filter, transactions],
   );
   const grouped = useMemo(() => {
@@ -61,6 +61,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
         <button type="button" className={filter === 'expense' ? 'active expense' : ''} onClick={() => setFilter('expense')}>المصروفات</button>
         <button type="button" className={filter === 'debt_given' ? 'active debt' : ''} onClick={() => setFilter('debt_given')}>إعطاء دين</button>
         <button type="button" className={filter === 'debt_repayment' ? 'active debt' : ''} onClick={() => setFilter('debt_repayment')}>تسديد دين</button>
+        <button type="button" aria-pressed={filter === 'treasury'} className={filter === 'treasury' ? 'active treasury' : ''} onClick={() => setFilter('treasury')}>الخزينة</button>
       </div>
       <section className="history-list">
         {grouped.length > 0 ? grouped.map(([dateLabel, items]) => (
@@ -94,7 +95,7 @@ export function HistoryPage({ transactions, balance, onUpdate, onDelete }: Histo
       )}
       <ConfirmDialog open={Boolean(pendingDelete)}
         title={pendingDelete?.type === 'debt_given' ? 'حذف الدين وكل تسديداته؟' : 'حذف العملية؟'}
-        description={pendingDelete?.type === 'debt_given' ? 'راح ينحذف الدين وكل دفعاته المرتبطة من السجل، وينعكس أثرها بالكامل على الرصيد. ما نكدر نرجعها إلا من نسخة احتياطية.' : 'راح تنحذف من كل السجلات ويتحدث الرصيد والمتبقي من الدين مباشرة.'}
+        description={pendingDelete?.type === 'debt_given' ? 'راح ينحذف الدين وكل دفعاته المرتبطة من السجل، وينعكس أثرها بالكامل على الرصيد. ما نكدر نرجعها إلا من نسخة احتياطية.' : 'راح تنحذف من كل السجلات وتتحدث الأرصدة المرتبطة بها مباشرة. ما نكدر نرجعها إلا من نسخة احتياطية.'}
         onClose={() => setPendingDelete(null)} onConfirm={confirmDelete} />
     </div>
   );

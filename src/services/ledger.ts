@@ -1,4 +1,12 @@
-import type { Transaction } from '../types/transaction';
+import type { Transaction, TransactionType, TreasuryType } from '../types/transaction';
+
+export function isTreasuryType(type: TransactionType): type is TreasuryType {
+  return type === 'treasury_deposit' || type === 'treasury_withdrawal' || type === 'treasury_expense';
+}
+
+export function isExpense(type: TransactionType): boolean {
+  return type === 'expense' || type === 'treasury_expense';
+}
 
 export interface LedgerTotals {
   income: number;
@@ -7,6 +15,7 @@ export interface LedgerTotals {
   debtGiven: number;
   debtRepaid: number;
   outstanding: number;
+  treasury: number;
 }
 
 export interface DebtSummary {
@@ -31,6 +40,9 @@ export function getTotals(transactions: readonly Transaction[]): LedgerTotals {
   let expenses = 0n;
   let debtGiven = 0n;
   let debtRepaid = 0n;
+  let deposited = 0n;
+  let withdrawn = 0n;
+  let treasuryExpenses = 0n;
   for (const item of transactions) {
     const amount = BigInt(item.amount);
     switch (item.type) {
@@ -38,12 +50,16 @@ export function getTotals(transactions: readonly Transaction[]): LedgerTotals {
       case 'expense': expenses += amount; break;
       case 'debt_given': debtGiven += amount; break;
       case 'debt_repayment': debtRepaid += amount; break;
+      case 'treasury_deposit': deposited += amount; break;
+      case 'treasury_withdrawal': withdrawn += amount; break;
+      case 'treasury_expense': treasuryExpenses += amount; break;
     }
   }
   return {
     income: safeMoney(income),
-    expenses: safeMoney(expenses),
-    balance: safeMoney(income - expenses - debtGiven + debtRepaid),
+    expenses: safeMoney(expenses + treasuryExpenses),
+    balance: safeMoney(income - expenses - debtGiven + debtRepaid - deposited + withdrawn),
+    treasury: safeMoney(deposited - withdrawn - treasuryExpenses),
     debtGiven: safeMoney(debtGiven),
     debtRepaid: safeMoney(debtRepaid),
     outstanding: safeMoney(debtGiven - debtRepaid),
@@ -102,7 +118,7 @@ function validateTransaction(value: unknown, index: number): asserts value is Tr
   const item = value as Record<string, unknown>;
   if (
     typeof item.id !== 'string' || !item.id.trim()
-    || typeof item.type !== 'string' || !['income', 'expense', 'debt_given', 'debt_repayment'].includes(item.type)
+    || typeof item.type !== 'string' || !['income', 'expense', 'debt_given', 'debt_repayment', 'treasury_deposit', 'treasury_withdrawal', 'treasury_expense'].includes(item.type)
     || typeof item.title !== 'string' || !item.title.trim()
     || typeof item.amount !== 'number' || !Number.isSafeInteger(item.amount) || item.amount <= 0
     || !isValidDate(item.occurredAt) || !isValidDate(item.createdAt) || !isValidDate(item.updatedAt)
@@ -139,7 +155,18 @@ export function validateTransactions(value: unknown): asserts value is Transacti
     }
     repaidByDebt.set(item.debtId, repaid);
   }
-  getTotals([...byId.values()]);
+  if (getTotals([...byId.values()]).treasury < 0) {
+    throw new Error('رصيد الخزينة غير كافٍ. لا يمكن حفظ أو حذف أو دمج عملية تجعل الخزينة بالسالب.');
+  }
+}
+
+/** Check the extra cash reserved by a deposit against the latest persisted balance. */
+export function assertDepositAvailable(current: readonly Transaction[], incoming: Transaction, existing?: Transaction): void {
+  if (incoming.type !== 'treasury_deposit') return;
+  const extra = incoming.amount - (existing?.type === 'treasury_deposit' ? existing.amount : 0);
+  if (extra > 0 && extra > getTotals(current).balance) {
+    throw new Error('الرصيد المتاح غير كافٍ للتحويل إلى الخزينة.');
+  }
 }
 
 export function assertSameTransactionIdentity(existing: Transaction, incoming: Transaction): void {

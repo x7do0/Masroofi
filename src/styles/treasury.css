@@ -1,0 +1,32 @@
+.bottom-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; }
+.bottom-nav .nav-item { padding: 7px 2px; min-height: 48px; }
+.bottom-nav .nav-item span { white-space: normal; overflow-wrap: anywhere; line-height: 1.55; }
+.treasury-balance { display: flex; align-items: center; gap: 20px; padding: 28px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--green-50); }
+.treasury-mark { flex-shrink: 0; display: grid; place-items: center; width: 68px; height: 68px; border-radius: 20px; color: var(--green-800); background: var(--green-100); }
+.treasury-balance > div:last-child { min-width: 0; }
+.treasury-balance span { color: var(--muted); font-size: .88rem; }
+.treasury-balance strong { display: block; margin: 8px 0; color: var(--green-900); font-size: clamp(1.65rem, 5vw, 2.5rem); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.treasury-balance p { margin: 0; color: var(--muted); font-size: .85rem; }
+.treasury-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.treasury-action { display: flex; align-items: center; gap: 12px; min-height: 100px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); text-align: start; cursor: pointer; }
+.treasury-action:hover { background: var(--surface-soft); border-color: var(--green-500); }
+.treasury-action-icon { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; color: var(--green-800); background: var(--green-50); }
+.treasury_expense .treasury-action-icon { color: var(--red-700); background: var(--red-50); }
+.treasury-action-copy { min-width: 0; flex: 1; }
+.treasury-action-copy strong { display: block; font-size: .95rem; }
+.treasury-action-copy small { display: block; color: var(--muted); font-size: .78rem; line-height: 1.7; margin-top: 5px; }
+.treasury-action > svg { flex-shrink: 0; color: var(--muted); }
+.treasury-form-hint { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.8; }
+.section-icon.treasury, .transaction-avatar.treasury, .type-label.treasury { color: var(--green-800); background: var(--green-50); }
+.treasury-text { color: var(--green-800); }
+@media (max-width: 760px) {
+  .treasury-actions { grid-template-columns: 1fr; }
+  .treasury-action { min-height: 82px; padding: 16px; }
+  .treasury-balance { padding: 22px 18px; gap: 14px; }
+  .treasury-mark { width: 52px; height: 52px; border-radius: 16px; }
+  .bottom-nav { padding-inline: 4px; }
+}
+@media (max-width: 360px) {
+  .bottom-nav { width: calc(100% - 10px); grid-template-columns: 1fr 1.25fr .85fr .85fr .85fr 1fr; }
+  .bottom-nav .nav-item span { font-size: .65rem; }
+}

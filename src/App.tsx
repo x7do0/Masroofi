@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { LedgerPage } from './pages/LedgerPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { DebtsPage } from './pages/DebtsPage';
+import { TreasuryPage } from './pages/TreasuryPage';
 import { PwaUpdate } from './components/PwaUpdate';
 import type { Transaction, TransactionInput } from './types/transaction';
 import { appExperience } from './config/experience';
@@ -19,6 +20,7 @@ const pageMeta: Record<AppPage, { title: string; subtitle: string }> = {
   income: { title: 'الدخل', subtitle: 'سجل كل المبالغ اللي تدخل لرصيدك' },
   debts: { title: 'الديون', subtitle: 'فلوسك عند الناس وتسديداتها بمكان واحد' },
   history: { title: 'السجل', subtitle: 'كل العمليات مرتبة بمكان واحد' },
+  treasury: { title: 'الخزينة', subtitle: 'فلوسك المحفوظة، منفصلة عن رصيدك' },
 };
 
 export default function App() {
@@ -39,7 +41,7 @@ export default function App() {
   const addWithFeedback = useCallback(async (input: TransactionInput): Promise<Transaction> => {
     try {
       const item = await add(input);
-      const messages = { income: '💰 تمت إضافة الرصيد', expense: '🧾 تمت إضافة المصروف', debt_given: 'تمت إضافة الدين', debt_repayment: 'تم تسجيل التسديد' };
+      const messages = { income: '💰 تمت إضافة الرصيد', expense: '🧾 تمت إضافة المصروف', debt_given: 'تمت إضافة الدين', debt_repayment: 'تم تسجيل التسديد', treasury_deposit: 'تم التحويل إلى الخزينة', treasury_withdrawal: 'تم إرجاع المبلغ إلى الرصيد', treasury_expense: 'تم تسجيل الصرف من الخزينة' };
       notify('success', messages[input.type]);
       return item;
     } catch (cause) {
@@ -103,6 +105,7 @@ export default function App() {
         </div>
       );
     }
+    if (error) return <button type="button" className="button secondary" onClick={() => window.location.reload()}>إعادة المحاولة</button>;
     switch (page) {
       case 'home':
         return <HomePage transactions={transactions} {...totals} onNavigate={navigate} />;
@@ -114,25 +117,27 @@ export default function App() {
         return <HistoryPage transactions={transactions} balance={totals.balance} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
       case 'debts':
         return <DebtsPage transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
+      case 'treasury':
+        return <TreasuryPage transactions={transactions} onAdd={addWithFeedback} onUpdate={updateWithFeedback} onDelete={removeWithFeedback} />;
       default:
         return null;
     }
-  }, [addWithFeedback, loading, navigate, page, removeWithFeedback, totals, transactions, updateWithFeedback]);
+  }, [addWithFeedback, error, loading, navigate, page, removeWithFeedback, totals, transactions, updateWithFeedback]);
 
   return (
-    <div className={`app-shell${page !== 'debts' ? ' has-quick-add' : ''}`}>
+    <div className={`app-shell${page !== 'debts' && page !== 'treasury' ? ' has-quick-add' : ''}`}>
       <header className="app-header">
         <div className="brand-mark app-emoji-mark" aria-hidden="true">💸</div>
         <div className="header-copy"><h1>{meta.title}</h1><p>{meta.subtitle}</p></div>
         <div className="header-actions polish-actions">
           <ThemeToggle />
-          <DataTools transactions={transactions} onRestore={restoreWithFeedback} onMerge={mergeWithFeedback} disabled={loading} />
+          <DataTools transactions={transactions} onRestore={restoreWithFeedback} onMerge={mergeWithFeedback} disabled={loading || Boolean(error)} />
         </div>
       </header>
       {error && <div className="global-error" role="alert">{error}</div>}
       <PwaUpdate />
       <main className="app-main">{content}</main>
-      {page !== 'debts' && <QuickAdd key={page} onNavigate={navigate} />}
+      {page !== 'debts' && page !== 'treasury' && !error && <QuickAdd key={page} onNavigate={navigate} />}
       <BottomNav page={page} onChange={navigate} />
       <ToastStack items={toasts} />
     </div>

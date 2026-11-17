@@ -48,6 +48,11 @@ jobs:
         env:
           MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
         run: node scripts/cross-tab-regression.mjs
+      - name: Verify treasury migration, forms and theme preferences
+        if: success() || failure()
+        env:
+          MASROOFI_UI_OUTPUT: ${{ runner.temp }}/masroofi-ui-qa
+        run: node scripts/treasury-regression.mjs
       - name: Verify PWA, financial flows and offline persistence on preview
         if: success() || failure()
         run: |

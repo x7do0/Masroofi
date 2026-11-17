@@ -1,7 +1,7 @@
-import { HandCoins, Home, List, TrendingDown, TrendingUp } from 'lucide-react';
+import { HandCoins, Home, List, TrendingDown, TrendingUp, Vault } from 'lucide-react';
 import { useLayoutEffect, useRef } from 'react';
 
-export type AppPage = 'home' | 'expenses' | 'income' | 'debts' | 'history';
+export type AppPage = 'home' | 'expenses' | 'income' | 'debts' | 'history' | 'treasury';
 interface BottomNavProps { page: AppPage; onChange: (page: AppPage) => void }
 const items = [
   { id: 'home' as const, label: 'الرئيسية', icon: Home },
@@ -9,6 +9,7 @@ const items = [
   { id: 'income' as const, label: 'الدخل', icon: TrendingUp },
   { id: 'debts' as const, label: 'الديون', icon: HandCoins },
   { id: 'history' as const, label: 'السجل', icon: List },
+  { id: 'treasury' as const, label: 'الخزينة', icon: Vault },
 ];
 
 export function BottomNav({ page, onChange }: BottomNavProps) {

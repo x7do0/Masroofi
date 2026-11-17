@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Banknote, FileText, HandCoins, PencilLine, Plus, ReceiptText, Save, UserRound } from 'lucide-react';
+import { Banknote, FileText, HandCoins, PencilLine, Plus, ReceiptText, Save, UserRound, Vault } from 'lucide-react';
+import { isTreasuryType } from '../services/ledger';
 import type { Transaction, TransactionInput, TransactionType } from '../types/transaction';
 import { formatGroupedInteger, formatIQD, parseGroupedInteger } from '../utils/currency';
 import { nowLocalInputValue } from '../utils/date';
@@ -24,9 +25,9 @@ interface FormFields {
   emoji: string | null;
 }
 
-function initialState(editing?: Transaction | null, debt?: Transaction): FormFields {
+function initialState(editing?: Transaction | null, debt?: Transaction, type?: TransactionType): FormFields {
   return {
-    title: debt?.title ?? editing?.title ?? '',
+    title: debt?.title ?? editing?.title ?? (type === 'treasury_deposit' ? 'تحويل إلى الخزينة' : type === 'treasury_withdrawal' ? 'إرجاع إلى الرصيد' : ''),
     amount: editing?.amount ?? 0,
     occurredAt: editing?.occurredAt ?? nowLocalInputValue(),
     note: editing?.note ?? '',
@@ -39,10 +40,13 @@ const labels = {
   expense: { noun: 'المصروف', add: 'إضافة مصروف جديد', action: 'إضافة مصروف', saved: 'تمت إضافة المصروف.', placeholder: 'مثال: مواد غذائية' },
   debt_given: { noun: 'الدين', add: 'إضافة دين جديد', action: 'إضافة دين', saved: 'تمت إضافة الدين.', placeholder: 'مثال: علي' },
   debt_repayment: { noun: 'التسديد', add: 'تسديد دين', action: 'تسجيل التسديد', saved: 'تم تسجيل التسديد.', placeholder: '' },
+  treasury_deposit: { noun: 'التحويل للخزينة', add: 'تحويل للخزينة', action: 'تحويل للخزينة', saved: 'تم التحويل إلى الخزينة.', placeholder: 'مثال: ادخار هذا الشهر' },
+  treasury_withdrawal: { noun: 'الإرجاع للرصيد', add: 'إرجاع للرصيد', action: 'إرجاع للرصيد', saved: 'تم إرجاع المبلغ إلى الرصيد.', placeholder: 'مثال: مصاريف الأسبوع' },
+  treasury_expense: { noun: 'الصرف من الخزينة', add: 'صرف من الخزينة', action: 'صرف من الخزينة', saved: 'تم تسجيل الصرف من الخزينة.', placeholder: 'مثال: شراء جهاز' },
 };
 
 export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onSubmit, onCancelEdit }: TransactionFormProps) {
-  const [form, setForm] = useState<FormFields>(() => initialState(editing, debt));
+  const [form, setForm] = useState<FormFields>(() => initialState(editing, debt, type));
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
@@ -53,13 +57,14 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
   const amountRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setForm(initialState(editing, debt));
+    setForm(initialState(editing, debt, type));
     setMessage(null);
     setErrors({});
     setInvalidAmountInput(false);
   }, [type, editing?.id, debt?.id]);
 
   const isIncome = type === 'income';
+  const isTreasury = isTreasuryType(type);
   const isDebt = type === 'debt_given' || type === 'debt_repayment';
   const isRepayment = type === 'debt_repayment';
   const formId = isDebt ? uniqueId : type;
@@ -74,7 +79,7 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
     if (invalidAmountInput || !Number.isSafeInteger(form.amount) || form.amount <= 0) {
       nextErrors.amount = 'اكتب مبلغاً صحيحاً أكبر من صفر بالدينار العراقي.';
     } else if (maxAmount !== undefined && form.amount > maxAmount) {
-      nextErrors.amount = `مبلغ التسديد لا يمكن أن يتجاوز ${formatIQD(maxAmount)}.`;
+      nextErrors.amount = `المبلغ لا يمكن أن يتجاوز ${formatIQD(maxAmount)}.`;
     } else if (minAmount !== undefined && form.amount < minAmount) {
       nextErrors.amount = `مبلغ الدين لا يمكن أن يقل عن المسدد: ${formatIQD(minAmount)}.`;
     }
@@ -100,7 +105,7 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
       submittingRef.current = true;
       setSubmitting(true);
       await onSubmit(input);
-      if (!editing) setForm(initialState(undefined, debt));
+      if (!editing) setForm(initialState(undefined, debt, type));
       setMessage({ text: editing ? 'تم حفظ التعديل.' : copy.saved, error: false });
     } catch (cause) {
       setMessage({ text: cause instanceof Error ? cause.message : 'تعذر حفظ العملية.', error: true });
@@ -116,8 +121,8 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
       void submit();
     }} aria-busy={submitting}>
       <div className="section-heading">
-        <div className={`section-icon ${isDebt ? 'debt' : isIncome ? 'income' : 'expense'}`}>
-          {isDebt ? <HandCoins size={20} /> : isIncome ? <Banknote size={20} /> : <ReceiptText size={20} />}
+        <div className={`section-icon ${isTreasury ? 'treasury' : isDebt ? 'debt' : isIncome ? 'income' : 'expense'}`}>
+          {isTreasury ? <Vault size={20} /> : isDebt ? <HandCoins size={20} /> : isIncome ? <Banknote size={20} /> : <ReceiptText size={20} />}
         </div>
         <div>
           <h2>{editing ? `تعديل ${copy.noun}` : copy.add}</h2>
@@ -126,6 +131,7 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
       </div>
 
       <fieldset className="transaction-form-fields" disabled={submitting}>
+        {isTreasury && <p className="treasury-form-hint">{type === 'treasury_deposit' ? 'ينقص من الرصيد المتاح ويضاف للخزينة، بدون احتسابه مصروفاً.' : type === 'treasury_withdrawal' ? 'ينقص من الخزينة ويرجع للرصيد المتاح، بدون احتسابه دخلاً.' : 'ينقص من الخزينة ويُسجل مصروفاً، بدون تغيير الرصيد المتاح.'}</p>}
         <div className="form-grid">
           <div className="field-group">
             <label htmlFor={`${formId}-title`}>{isDebt ? 'اسم الشخص' : 'الاسم'}</label>
@@ -210,7 +216,7 @@ export function TransactionForm({ type, editing, debt, maxAmount, minAmount, onS
 
       {message && <div className={`form-message${message.error ? ' form-error' : ''}`} role={message.error ? 'alert' : 'status'}>{message.text}</div>}
       <div className="form-actions">
-        {(editing || isDebt) && onCancelEdit && <button type="button" className="button ghost" disabled={submitting} onClick={onCancelEdit}>إلغاء</button>}
+        {(editing || isDebt || isTreasury) && onCancelEdit && <button type="button" className="button ghost" disabled={submitting} onClick={onCancelEdit}>إلغاء</button>}
         <button type="submit" className="button primary grow" disabled={submitting}>
           {editing ? <Save size={18} /> : <Plus size={18} />}
           <span>{submitting ? 'جاري الحفظ...' : editing ? 'حفظ التعديل' : copy.action}</span>
