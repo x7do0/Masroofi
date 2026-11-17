@@ -112,7 +112,9 @@ try {
       for (const scheme of ['light', 'dark']) {
         for (const saved of [null, 'system', 'light', 'dark']) {
           const themeContext = await contextFor(browser, { colorScheme: scheme });
-          if (saved) await themeContext.addInitScript((value) => { if (!localStorage.getItem('masroofi-theme')) localStorage.setItem('masroofi-theme', value); }, saved);
+          if (saved) await themeContext.addInitScript((value) => {
+            if (location.origin === 'http://127.0.0.1:4175' && !localStorage.getItem('masroofi-theme')) localStorage.setItem('masroofi-theme', value);
+          }, saved);
           const themePage = await themeContext.newPage(); await themePage.goto(base); await ready(themePage);
           const initial = saved === 'light' || saved === 'dark' ? saved : scheme;
           const opposite = initial === 'light' ? 'dark' : 'light';

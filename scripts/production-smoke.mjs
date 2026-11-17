@@ -285,8 +285,15 @@ try {
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('textbox', { name: 'الاسم', exact: true }).fill(title);
     await dialog.getByRole('textbox', { name: 'المبلغ', exact: true }).fill(String(value));
+    assert(await dialog.getByRole('textbox', { name: 'المبلغ', exact: true }).inputValue() === value.toLocaleString('en-US'), `Treasury amount changed before submission: ${action}`);
     await dialog.getByRole('button', { name: action, exact: true }).click();
-    await dialog.waitFor({ state: 'hidden' });
+    try { await dialog.waitFor({ state: 'hidden' }); }
+    catch (error) {
+      console.error('Treasury form after failed submission:', await dialog.innerText());
+      console.error('Synthetic ledger:', JSON.stringify(await readTransactions(page)));
+      await page.screenshot({ path: 'treasury-submission-failure.png', fullPage: true, animations: 'disabled' });
+      throw error;
+    }
   }
   assert((await page.locator('.treasury-balance').innerText()).includes('12,000'), 'Treasury total is incorrect');
   assert((await page.locator('.treasury-balance').innerText()).includes('68,456'), 'Cash balance changed incorrectly after treasury operations');
