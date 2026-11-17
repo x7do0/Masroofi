@@ -23,6 +23,6 @@ export function formatIQD(value: number): string {
 }
 
 export function formatSignedIQD(value: number, type: import('../types/transaction').TransactionType): string {
-  const sign = type === 'income' || type === 'debt_repayment' ? '+' : '-';
+  const sign = type === 'treasury_deposit' || type === 'treasury_withdrawal' ? '' : type === 'income' || type === 'debt_repayment' ? '+' : '-';
   return `${sign}${formatter.format(Math.round(Math.abs(value)))} د.ع`;
 }

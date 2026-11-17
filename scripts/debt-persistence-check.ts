@@ -77,7 +77,7 @@ async function verifyUpgradedSchema() {
     request.onsuccess = () => {
       const db = request.result;
       try {
-        assert(db.version === 2, `Legacy database was not upgraded to version 2: ${db.version}`);
+        assert(db.version === 3, `Legacy database was not upgraded to version 3: ${db.version}`);
         assert(db.objectStoreNames.length === 1 && db.objectStoreNames.contains('transactions'), 'Migration changed the existing store layout');
         const store = db.transaction('transactions', 'readonly').objectStore('transactions');
         assert(store.keyPath === 'id' && store.indexNames.contains('occurredAt') && store.indexNames.contains('type'),
@@ -114,7 +114,7 @@ export async function runDebtPersistenceChecks() {
     'Opening the legacy V1 database changed or dropped income/expense metadata');
   await verifyUpgradedSchema();
   await expectTotals({ income: 1_100_000, expenses: 100_000, balance: 1_000_000, outstanding: 0 });
-  passed.push('IndexedDB V1 upgrades to V2 with income/expense records, store, key, and indexes intact');
+  passed.push('IndexedDB V1 upgrades to V3 with income/expense records, store, key, and indexes intact');
 
   let debt = await addTransaction({ type: 'debt_given', title: 'علي للاختبار', amount: 200_000,
     occurredAt: timestamp, note: 'fixture loan', emoji: '🤝' });

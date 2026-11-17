@@ -1,4 +1,5 @@
-import { HandCoins, MoreVertical, Pencil, Trash2, TrendingDown, TrendingUp, Undo2 } from 'lucide-react';
+import { HandCoins, MoreVertical, Pencil, Trash2, TrendingDown, TrendingUp, Undo2, ArrowLeftRight } from 'lucide-react';
+import { isTreasuryType } from '../services/ledger';
 import { memo, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Transaction } from '../types/transaction';
@@ -14,7 +15,7 @@ interface TransactionRowProps {
   displayTitle?: string;
 }
 interface MenuPlacement { left: number; top: number; maxHeight: number; maxWidth: number }
-const typeLabels = { income: 'دخل', expense: 'مصروف', debt_given: 'إعطاء دين', debt_repayment: 'تسديد دين' };
+const typeLabels = { income: 'دخل', expense: 'مصروف', debt_given: 'إعطاء دين', debt_repayment: 'تسديد دين', treasury_deposit: 'تحويل للخزينة', treasury_withdrawal: 'إرجاع للرصيد', treasury_expense: 'مصروف من الخزينة' };
 
 export const TransactionRow = memo(function TransactionRow({ transaction, onEdit, onDelete, compact = false, displayTitle }: TransactionRowProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,8 +25,10 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
   const menuId = useId();
   const isIncome = transaction.type === 'income';
   const isDebt = transaction.type === 'debt_given' || transaction.type === 'debt_repayment';
-  const tone = isDebt ? 'debt' : isIncome ? 'income' : 'expense';
-  const Icon = transaction.type === 'debt_given' ? HandCoins : transaction.type === 'debt_repayment' ? Undo2 : isIncome ? TrendingUp : TrendingDown;
+  const isTreasury = isTreasuryType(transaction.type);
+  const isTransfer = isTreasury && transaction.type !== 'treasury_expense';
+  const tone = isTransfer ? 'treasury' : isDebt ? 'debt' : isIncome ? 'income' : 'expense';
+  const Icon = isTransfer ? ArrowLeftRight : transaction.type === 'debt_given' ? HandCoins : transaction.type === 'debt_repayment' ? Undo2 : isIncome ? TrendingUp : TrendingDown;
 
   useLayoutEffect(() => {
     if (!menuOpen) return;
@@ -108,7 +111,7 @@ export const TransactionRow = memo(function TransactionRow({ transaction, onEdit
       <div className="transaction-copy">
         <div className="transaction-title-line">
           <strong>{displayTitle ?? transaction.title}</strong>
-          {(!compact || isDebt) && <span className={`type-label ${tone}`}>{typeLabels[transaction.type]}</span>}
+          {(!compact || isDebt || isTreasury) && <span className={`type-label ${tone}`}>{typeLabels[transaction.type]}</span>}
         </div>
         <span className="transaction-date date-ltr" dir="ltr">{formatDateTime(transaction.occurredAt)}</span>
         {!compact && transaction.note && <p>{transaction.note}</p>}

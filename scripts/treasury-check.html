@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><title>Treasury persistence checks</title></head>
+<body><h1>Treasury persistence checks</h1>
+<p>Synthetic fixtures on the isolated localhost:4175 origin only.</p>
+<button id="run">Run persistence checks</button><button id="reload">Verify after reload</button>
+<pre id="result" role="status">Ready</pre>
+<script type="module">
+  import { runTreasuryPersistenceChecks, verifyTreasuryAfterReload } from './treasury-persistence-check.ts';
+  const result = document.querySelector('#result');
+  async function run(check) {
+    result.textContent = 'Running';
+    try { result.textContent = 'PASS\n' + JSON.stringify(await check(), null, 2); }
+    catch (error) { result.textContent = 'FAIL\n' + error.stack; }
+  }
+  document.querySelector('#run').onclick = () => run(runTreasuryPersistenceChecks);
+  document.querySelector('#reload').onclick = () => run(verifyTreasuryAfterReload);
+</script></body></html>

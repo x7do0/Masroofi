@@ -1,4 +1,5 @@
-export type TransactionType = 'income' | 'expense' | 'debt_given' | 'debt_repayment';
+export type TreasuryType = 'treasury_deposit' | 'treasury_withdrawal' | 'treasury_expense';
+export type TransactionType = 'income' | 'expense' | 'debt_given' | 'debt_repayment' | TreasuryType;
 
 interface TransactionFields {
   id: string;
@@ -12,7 +13,7 @@ interface TransactionFields {
 }
 
 type TransactionKind =
-  | { type: 'income' | 'expense' | 'debt_given'; debtId?: never }
+  | { type: 'income' | 'expense' | 'debt_given' | TreasuryType; debtId?: never }
   | { type: 'debt_repayment'; debtId: string };
 
 export type Transaction = TransactionFields & TransactionKind;

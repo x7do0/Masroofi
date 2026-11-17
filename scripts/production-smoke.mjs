@@ -206,7 +206,7 @@ try {
   await themeButton.waitFor();
   await themeButton.click();
   const savedTheme = await page.evaluate(() => localStorage.getItem('masroofi-theme'));
-  assert(savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system', 'Theme preference was not persisted');
+  assert(savedTheme === 'light' || savedTheme === 'dark', 'Theme preference was not persisted as an explicit light/dark choice');
   await deleteDatabase(page);
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'مصروفي', exact: true }).waitFor();
@@ -275,6 +275,31 @@ try {
   await verifyDebtAndSummary(page);
   await verifyDebtHistory(page);
   await context.setOffline(false);
+  await navigate(page, 'الخزينة');
+  for (const [action, value, title] of [
+    ['تحويل للخزينة', 20000, 'ادخار تجريبي'],
+    ['إرجاع للرصيد', 5000, 'إرجاع تجريبي'],
+    ['صرف من الخزينة', 3000, 'صرف تجريبي من الخزينة'],
+  ]) {
+    await page.locator('.treasury-actions').getByRole('button', { name: new RegExp(`^${action}`) }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('textbox', { name: 'الاسم', exact: true }).fill(title);
+    await dialog.getByRole('textbox', { name: 'المبلغ', exact: true }).fill(String(value));
+    await dialog.getByRole('button', { name: action, exact: true }).click();
+    await dialog.waitFor({ state: 'hidden' });
+  }
+  assert((await page.locator('.treasury-balance').innerText()).includes('12,000'), 'Treasury total is incorrect');
+  assert((await page.locator('.treasury-balance').innerText()).includes('68,456'), 'Cash balance changed incorrectly after treasury operations');
+  await navigate(page, 'السجل');
+  await page.getByRole('group', { name: 'فلترة السجل' }).getByRole('button', { name: 'الخزينة', exact: true }).click();
+  assert(await page.locator('.history-list .transaction-row').count() === 3, 'Treasury history filter lost or included unrelated transactions');
+  const withTreasury = await readTransactions(page);
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await navigate(page, 'الخزينة');
+  assert((await page.locator('.treasury-balance').innerText()).includes('12,000'), 'Treasury failed to survive offline reload');
+  assert(JSON.stringify(await readTransactions(page)) === JSON.stringify(withTreasury), 'Offline reload changed ledger records');
+  await context.setOffline(false);
   await page.screenshot({ path: 'production-smoke.png', fullPage: true });
 
   assert(runtimeErrors.length === 0, `Runtime errors detected:\n${runtimeErrors.join('\n')}`);
@@ -288,6 +313,7 @@ try {
   console.log(`PASS: real IndexedDB persisted transaction across reload and page reopen: ${testTitle}`);
   console.log('PASS: loan 20,000 and repayment 5,000 preserve income 123,456 and expenses 25,000');
   console.log('PASS: cash balance 83,456 and remaining debt 15,000 persist across reopening and an offline reload');
+  console.log('PASS: treasury transfers, direct spending and history filter preserve all records through offline reload');
 } finally {
   await context.setOffline(false);
   try {

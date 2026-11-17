@@ -13,7 +13,7 @@ test('case 1: giving 200,000 from 1,000,000 changes cash and receivables only', 
   const records = [transaction(), loan()];
   assert.deepEqual(totals(records), {
     income: 1_000_000, expenses: 0, balance: 800_000,
-    debtGiven: 200_000, debtRepaid: 0, outstanding: 200_000,
+    debtGiven: 200_000, debtRepaid: 0, outstanding: 200_000, treasury: 0,
   });
   assert.equal(getDebts(records)[0].status, 'unpaid');
 });
@@ -22,7 +22,7 @@ test('case 2: partial repayment adds cash without new income', () => {
   const records = [transaction(), loan(), repayment()];
   assert.deepEqual(totals(records), {
     income: 1_000_000, expenses: 0, balance: 850_000,
-    debtGiven: 200_000, debtRepaid: 50_000, outstanding: 150_000,
+    debtGiven: 200_000, debtRepaid: 50_000, outstanding: 150_000, treasury: 0,
   });
   const [debt] = getDebts(records);
   assert.equal(debt.total, 200_000);
@@ -36,7 +36,7 @@ test('case 3: final repayment restores original cash and marks the debt paid', (
   const records = [transaction(), loan(), repayment(), repayment({ id: 'repayment-2', amount: 150_000 })];
   assert.deepEqual(totals(records), {
     income: 1_000_000, expenses: 0, balance: 1_000_000,
-    debtGiven: 200_000, debtRepaid: 200_000, outstanding: 0,
+    debtGiven: 200_000, debtRepaid: 200_000, outstanding: 0, treasury: 0,
   });
   assert.equal(getDebts(records)[0].status, 'paid');
 });
@@ -49,7 +49,7 @@ test('cases 4 and 5: normal income and expense retain their own totals with sett
   ];
   assert.deepEqual(totals(records), {
     income: 1_500_000, expenses: 100_000, balance: 1_400_000,
-    debtGiven: 200_000, debtRepaid: 200_000, outstanding: 0,
+    debtGiven: 200_000, debtRepaid: 200_000, outstanding: 0, treasury: 0,
   });
 });
 
@@ -87,7 +87,7 @@ test('case 9: removing a loan and its payments restores its net cash effect', ()
   assert.equal(totals(records).balance, 850_000);
   assert.deepEqual(totals([opening]), {
     income: 1_000_000, expenses: 0, balance: 1_000_000,
-    debtGiven: 0, debtRepaid: 0, outstanding: 0,
+    debtGiven: 0, debtRepaid: 0, outstanding: 0, treasury: 0,
   });
   // A partial deletion must never leave a valid ledger with orphaned payments.
   assert.throws(() => validateTransactions([opening, repayment()]));
@@ -105,7 +105,7 @@ test('case 10: corrected and deleted repayments recalculate from the remaining l
 });
 
 test('empty and legacy ledgers preserve income/expense behavior, including negative cash', () => {
-  assert.deepEqual(totals([]), { income: 0, expenses: 0, balance: 0, debtGiven: 0, debtRepaid: 0, outstanding: 0 });
+  assert.deepEqual(totals([]), { income: 0, expenses: 0, balance: 0, debtGiven: 0, debtRepaid: 0, outstanding: 0, treasury: 0 });
   assert.equal(totals([transaction({ type: 'expense', amount: 100_000 })]).balance, -100_000);
   assert.deepEqual(getDebts([transaction()]), []);
 });

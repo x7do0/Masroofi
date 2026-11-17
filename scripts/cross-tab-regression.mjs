@@ -40,7 +40,7 @@ try {
   await first.goto(url);
   await first.locator('.balance-card').waitFor();
   await first.evaluate(() => new Promise((done, fail) => {
-    const request = indexedDB.open('masroofi-db', 2);
+    const request = indexedDB.open('masroofi-db');
     request.onerror = () => fail(request.error);
     request.onsuccess = () => {
       const db = request.result;
@@ -73,7 +73,7 @@ try {
   }
   report.cases.push('concurrent edits to different records converge without loss');
   await second.evaluate(() => new Promise((done, fail) => {
-    const request = indexedDB.open('masroofi-db', 2);
+    const request = indexedDB.open('masroofi-db');
     request.onerror = () => fail(request.error);
     request.onsuccess = () => {
       const db = request.result;

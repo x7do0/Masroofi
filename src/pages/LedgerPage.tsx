@@ -7,6 +7,7 @@ import { TransactionRow } from '../components/TransactionRow';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { emptyStates } from '../content/emptyStates';
+import { isExpense } from '../services/ledger';
 
 interface LedgerPageProps {
   type: 'income' | 'expense';
@@ -20,7 +21,7 @@ export function LedgerPage({ type, transactions, onAdd, onUpdate, onDelete }: Le
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   const isIncome = type === 'income';
-  const filtered = useMemo(() => transactions.filter((item) => item.type === type), [transactions, type]);
+  const filtered = useMemo(() => transactions.filter((item) => type === 'expense' ? isExpense(item.type) : item.type === type), [transactions, type]);
   const total = useMemo(() => filtered.reduce((sum, item) => sum + item.amount, 0), [filtered]);
 
   const submit = async (input: TransactionInput) => {
@@ -51,7 +52,7 @@ export function LedgerPage({ type, transactions, onAdd, onUpdate, onDelete }: Le
       </section>
 
       <TransactionForm
-        type={type}
+        type={editing?.type ?? type}
         editing={editing}
         onSubmit={submit}
         onCancelEdit={() => setEditing(null)}

@@ -68,7 +68,7 @@ async function prepare(context, count) {
   await page.goto(url);
   await ready(page);
   await page.evaluate((items) => new Promise((done, fail) => {
-    const request = indexedDB.open('masroofi-db', 2);
+    const request = indexedDB.open('masroofi-db');
     request.onerror = () => fail(request.error);
     request.onsuccess = () => {
       const db = request.result;

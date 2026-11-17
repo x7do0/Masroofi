@@ -26,7 +26,7 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
     const date = new Date(item.occurredAt);
     return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
   });
-  const { income: monthIncome, expenses: monthExpenses } = getTotals(monthTransactions.filter((item) => item.type === 'income' || item.type === 'expense'));
+  const { income: monthIncome, expenses: monthExpenses } = getTotals(monthTransactions);
   const balanceStatus: BalanceStatus = transactions.length === 0
     ? 'empty'
     : balance < 0
@@ -102,7 +102,7 @@ export function HomePage({ transactions, balance, income, expenses, onNavigate }
         <div className="list-section-head">
           <div>
             <h2>آخر العمليات</h2>
-            <p>أحدث حركة على رصيدك.</p>
+            <p>أحدث حركة مالية.</p>
           </div>
           {transactions.length > 0 && (
             <button type="button" className="text-button" onClick={() => onNavigate('history')}>عرض الكل <ArrowLeft size={16} /></button>
